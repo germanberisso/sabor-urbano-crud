@@ -42,7 +42,7 @@ Sistema de gestión integral para restaurante desarrollado con **Node.js**, **Ex
 ## 🏗️ Arquitectura
 
 ```
-📁 sabor-urbano-backend/
+📁 sabor-urbano-crud/
 ├── 🎮 controllers/          # Controladores con lógica de negocio
 │   ├── tareasController.js
 │   ├── empleadosController.js
@@ -61,8 +61,9 @@ Sistema de gestión integral para restaurante desarrollado con **Node.js**, **Ex
 ├── 🎨 views/               # Vistas Pug para interfaces web
 │   ├── layout.pug
 │   ├── index.pug
-│   ├── tareas/
-│   ├── empleados/
+│   ├── error.pug
+│   ├── tareas/index.pug
+│   ├── empleados/index.pug
 │   └── filters.pug
 ├── 🛡️ middleware/          # Middleware personalizado
 │   └── validation.js
@@ -71,7 +72,6 @@ Sistema de gestión integral para restaurante desarrollado con **Node.js**, **Ex
 │   ├── empleados.json
 │   ├── pedidos.json
 │   └── insumos.json
-├── 🌐 public/             # Archivos estáticos
 ├── ⚙️ package.json        # Dependencias
 └── 🚀 app.js             # Servidor principal
 ```
@@ -88,8 +88,8 @@ Sistema de gestión integral para restaurante desarrollado con **Node.js**, **Ex
 
 1. **Clonar el repositorio**
 ```bash
-git clone https://github.com/juandualibe/sabor-urbano-backend.git
-cd sabor-urbano-backend
+git clone https://github.com/germanberisso/sabor-urbano-crud.git
+cd sabor-urbano-crud
 ```
 
 2. **Instalar dependencias**
