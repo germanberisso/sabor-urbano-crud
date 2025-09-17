@@ -1,0 +1,74 @@
+{
+  "tareas": [
+    {
+      "id": 1,
+      "titulo": "Confirmar pedido RAPPI-789",
+      "descripcion": "Verificar y confirmar pedido recibido desde Rappi",
+      "area": "gestion_pedidos",
+      "estado": "en_proceso",
+      "prioridad": "alta",
+      "empleadoAsignado": 4,
+      "pedidoAsociado": 2,
+      "fechaCreacion": "2024-01-15T15:00:00Z",
+      "fechaInicio": "2025-09-17T01:47:52.370Z",
+      "fechaFinalizacion": null,
+      "observaciones": "Actualizado desde Thunder Client"
+    },
+    {
+      "id": 2,
+      "titulo": "Preparar hamburguesas ORD-001",
+      "descripcion": "Preparar 2 hamburguesas clásicas sin cebolla",
+      "area": "gestion_pedidos",
+      "estado": "en_proceso",
+      "prioridad": "alta",
+      "empleadoAsignado": 2,
+      "pedidoAsociado": 1,
+      "fechaCreacion": "2024-01-15T14:30:00Z",
+      "fechaInicio": "2024-01-15T14:35:00Z",
+      "fechaFinalizacion": null,
+      "observaciones": "Sin cebolla según especificación del cliente"
+    },
+    {
+      "id": 3,
+      "titulo": "Alerta de stock bajo - Carne molida",
+      "descripcion": "El stock de carne molida está por debajo del mínimo",
+      "area": "control_inventario",
+      "estado": "pendiente",
+      "prioridad": "alta",
+      "empleadoAsignado": 5,
+      "pedidoAsociado": null,
+      "fechaCreacion": "2024-01-15T08:00:00Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null,
+      "observaciones": "Stock actual: 10kg, Mínimo: 15kg. Contactar proveedor urgente"
+    },
+    {
+      "id": 4,
+      "titulo": "Actualizar stock después de preparación",
+      "descripcion": "Descontar insumos utilizados en pedido ORD-001",
+      "area": "control_inventario",
+      "estado": "pendiente",
+      "prioridad": "media",
+      "empleadoAsignado": 5,
+      "pedidoAsociado": 1,
+      "fechaCreacion": "2024-01-15T14:35:00Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null,
+      "observaciones": "Descontar: 2 panes, 200g carne, 1kg papas"
+    },
+    {
+      "id": 5,
+      "titulo": "Asignar repartidor para ORD-001",
+      "descripcion": "Asignar repartidor disponible cuando el pedido esté listo",
+      "area": "gestion_pedidos",
+      "estado": "pendiente",
+      "prioridad": "media",
+      "empleadoAsignado": 3,
+      "pedidoAsociado": 1,
+      "fechaCreacion": "2024-01-15T14:30:00Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null,
+      "observaciones": "Dirección: Av. Corrientes 1234, CABA - Tiempo estimado: 30 min"
+    }
+  ]
+}

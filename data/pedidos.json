@@ -1,0 +1,83 @@
+{
+  "pedidos": [
+    {
+      "id": 1,
+      "numeroOrden": "ORD-001",
+      "cliente": {
+        "nombre": "Pedro Fernández",
+        "telefono": "11-9876-5432",
+        "direccion": "Av. Corrientes 1234, CABA"
+      },
+      "items": [
+        {
+          "producto": "Hamburguesa Clásica",
+          "cantidad": 2,
+          "precio": 1500
+        },
+        {
+          "producto": "Papas Fritas",
+          "cantidad": 1,
+          "precio": 800
+        }
+      ],
+      "total": 3800,
+      "tipo": "delivery",
+      "plataforma": "propia",
+      "estado": "en_preparacion",
+      "fechaCreacion": "2024-01-15T14:30:00Z",
+      "tiempoEstimado": 30,
+      "observaciones": "Sin cebolla en la hamburguesa"
+    },
+    {
+      "id": 2,
+      "numeroOrden": "RAPPI-789",
+      "cliente": {
+        "nombre": "Cliente Rappi",
+        "telefono": "Oculto",
+        "direccion": "Belgrano 567, CABA"
+      },
+      "items": [
+        {
+          "producto": "Ensalada César",
+          "cantidad": 1,
+          "precio": 1200
+        }
+      ],
+      "total": 1200,
+      "tipo": "delivery",
+      "plataforma": "rappi",
+      "estado": "pendiente",
+      "fechaCreacion": "2024-01-15T15:00:00Z",
+      "tiempoEstimado": 25,
+      "observaciones": "Pedido desde Rappi"
+    },
+    {
+      "id": 3,
+      "numeroOrden": "MESA-05",
+      "cliente": {
+        "nombre": "Mesa 5",
+        "telefono": "N/A",
+        "direccion": "Local"
+      },
+      "items": [
+        {
+          "producto": "Pizza Margherita",
+          "cantidad": 1,
+          "precio": 2200
+        },
+        {
+          "producto": "Gaseosa",
+          "cantidad": 2,
+          "precio": 600
+        }
+      ],
+      "total": 2800,
+      "tipo": "presencial",
+      "plataforma": "local",
+      "estado": "finalizado",
+      "fechaCreacion": "2024-01-15T13:15:00Z",
+      "tiempoEstimado": 20,
+      "observaciones": "Mesa 5 - Local"
+    }
+  ]
+}
