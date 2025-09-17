@@ -551,7 +551,6 @@ ls -la data/
 - **ESLint** para formato
 - **Comentarios** en español
 - **Nombres descriptivos** para variables y métodos
-- **Commits semánticos**
 
 ## 👨‍💻 Equipo de Desarrollo
 
