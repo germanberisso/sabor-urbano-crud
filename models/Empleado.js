@@ -18,6 +18,40 @@ class Empleado {
         }
     }
 
+    // NUEVOS MÉTODOS PARA ROLES Y ÁREAS
+    async getRoles() {
+        try {
+            const rolesPath = path.join(__dirname, '../data/roles.json');
+            const data = await fs.readFile(rolesPath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error('Error al leer roles:', error);
+            return [];
+        }
+    }
+
+    async getAreas() {
+        try {
+            const areasPath = path.join(__dirname, '../data/areas.json');
+            const data = await fs.readFile(areasPath, 'utf8');
+            return JSON.parse(data);
+        } catch (error) {
+            console.error('Error al leer áreas:', error);
+            return [];
+        }
+    }
+
+    async validarRol(rol) {
+        const roles = await this.getRoles();
+        return roles.some(r => r.nombre === rol && r.activo);
+    }
+
+    async validarArea(area) {
+        const areas = await this.getAreas();
+        return areas.some(a => a.nombre === area && a.activa);
+    }
+    // FIN DE NUEVOS MÉTODOS
+
     // Método para obtener empleado por ID
     async getById(id) {
         try {

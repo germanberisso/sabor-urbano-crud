@@ -30,6 +30,7 @@ Sistema de gestión integral para restaurante desarrollado con **Node.js**, **Ex
 - 📊 **Control de Inventario** - Manejo de stock con alertas automáticas
 - 🔍 **Sistema de Filtros** - Búsquedas avanzadas y filtros combinados
 - 📱 **Interfaces Web** - Dashboard responsivo con Bootstrap 5
+- ✅ **Validación de Formularios** - Roles y áreas predefinidos
 
 ### 🔧 Características Técnicas
 - ⚡ **API REST completa** con operaciones CRUD
@@ -71,7 +72,9 @@ Sistema de gestión integral para restaurante desarrollado con **Node.js**, **Ex
 │   ├── tareas.json
 │   ├── empleados.json
 │   ├── pedidos.json
-│   └── insumos.json
+│   ├── insumos.json
+│   ├── roles.json         # Roles para validación de formularios
+│   └── areas.json         # Áreas para validación de filtros
 ├── ⚙️ package.json        # Dependencias
 └── 🚀 app.js             # Servidor principal
 ```
@@ -183,6 +186,14 @@ npm start
 | `/api/empleados/area/:area` | Por área (cocina, reparto, salon, inventario, administracion) |
 | `/api/empleados/validar-email?email=...` | Validar email único |
 
+#### 🎯 Validación de Formularios
+| Endpoint | Descripción |
+|----------|-------------|
+| `/api/empleados/roles` | Obtener todos los roles disponibles |
+| `/api/empleados/areas` | Obtener todas las áreas disponibles |
+| `/api/empleados/validar-rol/:rol` | Validar rol específico |
+| `/api/empleados/validar-area/:area` | Validar área específica |
+
 ### 📦 Gestión de Pedidos (`/api/pedidos`)
 
 | Método | Endpoint | Descripción |
@@ -277,6 +288,21 @@ GET http://localhost:3000/api/tareas/area/gestion_pedidos
 GET http://localhost:3000/api/empleados/rol/cocinero
 ```
 
+#### ✅ Validación de Roles y Áreas
+```http
+# Obtener todos los roles
+GET http://localhost:3000/api/empleados/roles
+
+# Obtener todas las áreas
+GET http://localhost:3000/api/empleados/areas
+
+# Validar rol específico
+GET http://localhost:3000/api/empleados/validar-rol/cocinero
+
+# Validar área específica
+GET http://localhost:3000/api/empleados/validar-area/cocina
+```
+
 #### ⚠️ Validaciones de Error
 ```http
 # Error 400 - Datos faltantes
@@ -315,6 +341,10 @@ class Empleado {
   async getByArea(area)             // Por área de trabajo
   async validarEmailUnico(email)    // Validación de email
   async getEstadisticas()           // Estadísticas por rol/área
+  async getRoles()                  // Obtener roles disponibles
+  async getAreas()                  // Obtener áreas disponibles
+  async validarRol(rol)             // Validar rol específico
+  async validarArea(area)           // Validar área específica
 }
 ```
 
@@ -329,6 +359,18 @@ sanitizarDatos()                  // Limpiar strings
 logRequest()                      // Logging HTTP
 manejarErrores()                  // Manejo centralizado
 ```
+
+### 📊 Base de Datos JSON
+
+#### Archivos de Datos
+- **tareas.json** - Registro de todas las tareas del sistema
+- **empleados.json** - Información de empleados con roles y áreas
+- **pedidos.json** - Pedidos presenciales y delivery
+- **insumos.json** - Inventario con control de stock
+
+#### Archivos de Validación
+- **roles.json** - Definición de roles del sistema (administrador, cocinero, repartidor, mozo, encargado_stock)
+- **areas.json** - Definición de áreas funcionales (gestion_pedidos, control_inventario, cocina, reparto, salon, administracion)
 
 ## 🛠️ Tecnologías
 
@@ -419,6 +461,12 @@ curl "http://localhost:3000/api/empleados/area/cocina"
 
 # Insumos con stock bajo
 curl "http://localhost:3000/api/insumos/bajo-stock"
+
+# Obtener roles disponibles
+curl "http://localhost:3000/api/empleados/roles"
+
+# Validar rol específico
+curl "http://localhost:3000/api/empleados/validar-rol/cocinero"
 ```
 
 ## 🎯 Casos de Uso Reales
@@ -441,6 +489,12 @@ curl "http://localhost:3000/api/insumos/bajo-stock"
 2. **Filtrar por área** → `GET /api/empleados/area/cocina`
 3. **Asignar a tarea** → `PUT /api/tareas/:id`
 4. **Estadísticas del equipo** → `GET /api/empleados/estadisticas`
+
+### ✅ Validación de Formularios
+1. **Obtener roles disponibles** → `GET /api/empleados/roles`
+2. **Obtener áreas disponibles** → `GET /api/empleados/areas`
+3. **Validar rol antes de asignar** → `GET /api/empleados/validar-rol/:rol`
+4. **Validar área antes de crear tarea** → `GET /api/empleados/validar-area/:area`
 
 ## 🔧 Configuración Avanzada
 
