@@ -1,12 +1,15 @@
+// Importa módulos para manejo de archivos y rutas
 const fs = require('fs').promises;
 const path = require('path');
 
+// Clase para gestionar operaciones CRUD de empleados usando JSON
 class Empleado {
+    // Inicializa la ruta al archivo empleados.json
     constructor() {
         this.filePath = path.join(__dirname, '../data/empleados.json');
     }
 
-    // Método para leer todos los empleados
+    // Lee todos los empleados desde el archivo JSON
     async getAll() {
         try {
             const data = await fs.readFile(this.filePath, 'utf8');
@@ -19,6 +22,8 @@ class Empleado {
     }
 
     // NUEVOS MÉTODOS PARA ROLES Y ÁREAS
+
+    // Lee la lista de roles desde roles.json
     async getRoles() {
         try {
             const rolesPath = path.join(__dirname, '../data/roles.json');
@@ -30,6 +35,7 @@ class Empleado {
         }
     }
 
+    // Lee la lista de áreas desde areas.json
     async getAreas() {
         try {
             const areasPath = path.join(__dirname, '../data/areas.json');
@@ -41,18 +47,20 @@ class Empleado {
         }
     }
 
+    // Valida si un rol es válido y está activo
     async validarRol(rol) {
         const roles = await this.getRoles();
         return roles.some(r => r.nombre === rol && r.activo);
     }
 
+    // Valida si un área es válida y está activa
     async validarArea(area) {
         const areas = await this.getAreas();
         return areas.some(a => a.nombre === area && a.activa);
     }
     // FIN DE NUEVOS MÉTODOS
 
-    // Método para obtener empleado por ID
+    // Obtiene un empleado por su ID
     async getById(id) {
         try {
             const empleados = await this.getAll();
@@ -63,7 +71,7 @@ class Empleado {
         }
     }
 
-    // Método para obtener empleados por rol (según especificaciones)
+    // Filtra empleados por rol, solo activos
     async getByRol(rol) {
         try {
             const empleados = await this.getAll();
@@ -76,7 +84,7 @@ class Empleado {
         }
     }
 
-    // Método para obtener empleados por área (según especificaciones)
+    // Filtra empleados por área, solo activos
     async getByArea(area) {
         try {
             const empleados = await this.getAll();
@@ -89,7 +97,7 @@ class Empleado {
         }
     }
 
-    // Método para obtener empleados activos
+    // Obtiene todos los empleados activos
     async getActivos() {
         try {
             const empleados = await this.getAll();
@@ -100,18 +108,18 @@ class Empleado {
         }
     }
 
-    // Método para crear nuevo empleado (según especificaciones)
+    // Crea un nuevo empleado con validaciones
     async create(nuevoEmpleado) {
         try {
-            // Validar email único
+            // Valida que el email no esté en uso
             const emailUnico = await this.validarEmailUnico(nuevoEmpleado.email);
             if (!emailUnico) {
                 throw new Error('El email ya está en uso');
             }
-
             const empleados = await this.getAll();
+            // Genera un nuevo ID incremental
             const nuevoId = empleados.length > 0 ? Math.max(...empleados.map(e => e.id)) + 1 : 1;
-            
+            // Crea el objeto empleado con valores por defecto
             const empleado = {
                 id: nuevoId,
                 nombre: nuevoEmpleado.nombre,
@@ -123,8 +131,8 @@ class Empleado {
                 fechaIngreso: nuevoEmpleado.fechaIngreso || new Date().toISOString().split('T')[0],
                 activo: true
             };
-
             empleados.push(empleado);
+            // Guarda los cambios en el archivo JSON
             await this.saveAll(empleados);
             return empleado;
         } catch (error) {
@@ -133,24 +141,23 @@ class Empleado {
         }
     }
 
-    // Método para actualizar empleado
+    // Actualiza un empleado existente
     async update(id, datosActualizados) {
         try {
             const empleados = await this.getAll();
             const index = empleados.findIndex(empleado => empleado.id === parseInt(id));
-            
+            // Verifica si el empleado existe
             if (index === -1) {
                 throw new Error('Empleado no encontrado');
             }
-
-            // Validar email único si se está actualizando
+            // Valida email único si se actualiza
             if (datosActualizados.email) {
                 const emailUnico = await this.validarEmailUnico(datosActualizados.email, parseInt(id));
                 if (!emailUnico) {
                     throw new Error('El email ya está en uso');
                 }
             }
-
+            // Actualiza los datos del empleado
             empleados[index] = { ...empleados[index], ...datosActualizados };
             await this.saveAll(empleados);
             return empleados[index];
@@ -160,7 +167,7 @@ class Empleado {
         }
     }
 
-    // Método para eliminar empleado (desactivar)
+    // Desactiva un empleado (eliminación lógica)
     async delete(id) {
         try {
             return await this.update(id, { activo: false });
@@ -170,7 +177,7 @@ class Empleado {
         }
     }
 
-    // Método para validar email único
+    // Valida si un email está disponible, excluyendo un ID opcional
     async validarEmailUnico(email, idExcluir = null) {
         try {
             const empleados = await this.getAll();
@@ -185,10 +192,11 @@ class Empleado {
         }
     }
 
-    // Método para obtener estadísticas por roles y áreas
+    // Calcula estadísticas de empleados por rol y área
     async getEstadisticas() {
         try {
             const empleados = await this.getActivos();
+            // Genera estadísticas agrupadas por rol y área
             const stats = {
                 total: empleados.length,
                 porRol: {
@@ -206,7 +214,6 @@ class Empleado {
                     administracion: empleados.filter(e => e.area === 'administracion').length
                 }
             };
-
             return stats;
         } catch (error) {
             console.error('Error al obtener estadísticas de empleados:', error);
@@ -214,7 +221,7 @@ class Empleado {
         }
     }
 
-    // Método privado para guardar todos los empleados
+    // Guarda todos los empleados en el archivo JSON
     async saveAll(empleados) {
         try {
             const data = JSON.stringify({ empleados }, null, 2);

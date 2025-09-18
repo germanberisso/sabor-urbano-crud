@@ -69,6 +69,34 @@
       "fechaInicio": null,
       "fechaFinalizacion": null,
       "observaciones": "Dirección: Av. Corrientes 1234, CABA - Tiempo estimado: 30 min"
+    },
+    {
+      "id": 6,
+      "titulo": "Nueva tarea de prueba",
+      "descripcion": "Tarea creada desde Thunder Client",
+      "area": "gestion_pedidos",
+      "estado": "pendiente",
+      "prioridad": "alta",
+      "empleadoAsignado": 2,
+      "pedidoAsociado": null,
+      "fechaCreacion": "2025-09-18T14:12:23.896Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null,
+      "observaciones": ""
+    },
+    {
+      "id": 7,
+      "titulo": "Nueva tarea de prueba",
+      "descripcion": "Tarea creada desde Thunder Client",
+      "area": "gestion_pedidos",
+      "estado": "pendiente",
+      "prioridad": "alta",
+      "empleadoAsignado": 2,
+      "pedidoAsociado": null,
+      "fechaCreacion": "2025-09-18T14:18:04.224Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null,
+      "observaciones": ""
     }
   ]
 }

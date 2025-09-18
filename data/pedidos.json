@@ -78,6 +78,28 @@
       "fechaCreacion": "2024-01-15T13:15:00Z",
       "tiempoEstimado": 20,
       "observaciones": "Mesa 5 - Local"
+    },
+    {
+      "id": 4,
+      "numeroOrden": "TEST-001",
+      "cliente": {
+        "nombre": "Cliente Prueba",
+        "telefono": "11-9876-5432"
+      },
+      "items": [
+        {
+          "producto": "Hamburguesa",
+          "cantidad": 2,
+          "precio": 1500
+        }
+      ],
+      "total": 3000,
+      "tipo": "delivery",
+      "plataforma": "propia",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-18T14:19:46.803Z",
+      "tiempoEstimado": 30,
+      "observaciones": ""
     }
   ]
 }

@@ -1,12 +1,15 @@
+// Importa módulos para manejo de archivos y rutas
 const fs = require('fs').promises;
 const path = require('path');
 
+// Clase para gestionar operaciones CRUD de insumos usando JSON
 class Insumo {
+    // Inicializa la ruta al archivo insumos.json
     constructor() {
         this.filePath = path.join(__dirname, '../data/insumos.json');
     }
 
-    // Método para leer todos los insumos
+    // Lee todos los insumos desde el archivo JSON
     async getAll() {
         try {
             const data = await fs.readFile(this.filePath, 'utf8');
@@ -18,7 +21,7 @@ class Insumo {
         }
     }
 
-    // Método para obtener insumo por ID
+    // Obtiene un insumo por su ID
     async getById(id) {
         try {
             const insumos = await this.getAll();
@@ -29,7 +32,7 @@ class Insumo {
         }
     }
 
-    // Método para obtener insumos con stock bajo
+    // Filtra insumos con stock igual o menor al mínimo
     async getBajoStock() {
         try {
             const insumos = await this.getAll();
@@ -40,7 +43,7 @@ class Insumo {
         }
     }
 
-    // Método para obtener insumos por categoría
+    // Filtra insumos por categoría
     async getByCategoria(categoria) {
         try {
             const insumos = await this.getAll();
@@ -51,12 +54,13 @@ class Insumo {
         }
     }
 
-    // Método para crear nuevo insumo
+    // Crea un nuevo insumo con valores por defecto
     async create(nuevoInsumo) {
         try {
             const insumos = await this.getAll();
+            // Genera un nuevo ID incremental
             const nuevoId = insumos.length > 0 ? Math.max(...insumos.map(i => i.id)) + 1 : 1;
-            
+            // Crea el objeto insumo con estado calculado
             const insumo = {
                 id: nuevoId,
                 nombre: nuevoInsumo.nombre,
@@ -68,8 +72,8 @@ class Insumo {
                 ultimaActualizacion: new Date().toISOString(),
                 estado: this.determinarEstado(nuevoInsumo.stock, nuevoInsumo.stockMinimo)
             };
-
             insumos.push(insumo);
+            // Guarda los cambios en el archivo JSON
             await this.saveAll(insumos);
             return insumo;
         } catch (error) {
@@ -78,26 +82,25 @@ class Insumo {
         }
     }
 
-    // Método para actualizar stock de insumo
+    // Actualiza el stock de un insumo y su estado
     async actualizarStock(id, nuevoStock) {
         try {
             const insumos = await this.getAll();
             const index = insumos.findIndex(insumo => insumo.id === parseInt(id));
-            
+            // Verifica si el insumo existe
             if (index === -1) {
                 throw new Error('Insumo no encontrado');
             }
-
             const stockActualizado = parseInt(nuevoStock);
+            // Calcula el nuevo estado según el stock
             const estado = this.determinarEstado(stockActualizado, insumos[index].stockMinimo);
-
+            // Actualiza los datos del insumo
             insumos[index] = {
                 ...insumos[index],
                 stock: stockActualizado,
                 estado: estado,
                 ultimaActualizacion: new Date().toISOString()
             };
-
             await this.saveAll(insumos);
             return insumos[index];
         } catch (error) {
@@ -106,19 +109,19 @@ class Insumo {
         }
     }
 
-    // Método para descontar stock (cuando se usa en un plato)
+    // Descuenta una cantidad del stock de un insumo
     async descontarStock(id, cantidad) {
         try {
             const insumo = await this.getById(id);
+            // Verifica si el insumo existe
             if (!insumo) {
                 throw new Error('Insumo no encontrado');
             }
-
+            // Valida que haya stock suficiente
             const nuevoStock = insumo.stock - parseInt(cantidad);
             if (nuevoStock < 0) {
                 throw new Error('Stock insuficiente');
             }
-
             return await this.actualizarStock(id, nuevoStock);
         } catch (error) {
             console.error('Error al descontar stock:', error);
@@ -126,7 +129,7 @@ class Insumo {
         }
     }
 
-    // Método para determinar estado del insumo según stock
+    // Determina el estado del insumo según su stock
     determinarEstado(stock, stockMinimo) {
         if (stock <= stockMinimo) {
             return 'bajo_stock';
@@ -137,10 +140,11 @@ class Insumo {
         }
     }
 
-    // Método para obtener alertas de stock
+    // Genera alertas para insumos con stock bajo
     async getAlertas() {
         try {
             const insumosConBajoStock = await this.getBajoStock();
+            // Retorna datos relevantes para alertas
             return insumosConBajoStock.map(insumo => ({
                 id: insumo.id,
                 nombre: insumo.nombre,
@@ -155,17 +159,16 @@ class Insumo {
         }
     }
 
-    // Método para actualizar insumo
+    // Actualiza un insumo existente
     async update(id, datosActualizados) {
         try {
             const insumos = await this.getAll();
             const index = insumos.findIndex(insumo => insumo.id === parseInt(id));
-            
+            // Verifica si el insumo existe
             if (index === -1) {
                 throw new Error('Insumo no encontrado');
             }
-
-            // Si se actualiza el stock, recalcular estado
+            // Recalcula el estado si se actualiza el stock
             if (datosActualizados.stock !== undefined) {
                 datosActualizados.estado = this.determinarEstado(
                     parseInt(datosActualizados.stock),
@@ -173,7 +176,7 @@ class Insumo {
                 );
                 datosActualizados.ultimaActualizacion = new Date().toISOString();
             }
-
+            // Actualiza los datos del insumo
             insumos[index] = { ...insumos[index], ...datosActualizados };
             await this.saveAll(insumos);
             return insumos[index];
@@ -183,16 +186,16 @@ class Insumo {
         }
     }
 
-    // Método para eliminar insumo
+    // Elimina un insumo
     async delete(id) {
         try {
             const insumos = await this.getAll();
             const insumosFiltrados = insumos.filter(insumo => insumo.id !== parseInt(id));
-            
+            // Verifica si el insumo existía
             if (insumos.length === insumosFiltrados.length) {
                 throw new Error('Insumo no encontrado');
             }
-
+            // Guarda los cambios en el archivo JSON
             await this.saveAll(insumosFiltrados);
             return true;
         } catch (error) {
@@ -201,7 +204,7 @@ class Insumo {
         }
     }
 
-    // Método privado para guardar todos los insumos
+    // Guarda todos los insumos en el archivo JSON
     async saveAll(insumos) {
         try {
             const data = JSON.stringify({ insumos }, null, 2);

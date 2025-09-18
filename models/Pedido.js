@@ -1,12 +1,15 @@
+// Importa módulos para manejo de archivos y rutas
 const fs = require('fs').promises;
 const path = require('path');
 
+// Clase para gestionar operaciones CRUD de pedidos usando JSON
 class Pedido {
+    // Inicializa la ruta al archivo pedidos.json
     constructor() {
         this.filePath = path.join(__dirname, '../data/pedidos.json');
     }
 
-    // Método para leer todos los pedidos
+    // Lee todos los pedidos desde el archivo JSON
     async getAll() {
         try {
             const data = await fs.readFile(this.filePath, 'utf8');
@@ -18,7 +21,7 @@ class Pedido {
         }
     }
 
-    // Método para obtener pedido por ID
+    // Obtiene un pedido por su ID
     async getById(id) {
         try {
             const pedidos = await this.getAll();
@@ -29,7 +32,7 @@ class Pedido {
         }
     }
 
-    // Método para obtener pedidos por tipo (presencial, delivery)
+    // Filtra pedidos por tipo (presencial o delivery)
     async getByTipo(tipo) {
         try {
             const pedidos = await this.getAll();
@@ -40,7 +43,7 @@ class Pedido {
         }
     }
 
-    // Método para obtener pedidos por plataforma (rappi, pedidosya, propia, local)
+    // Filtra pedidos por plataforma (rappi, pedidosya, propia, local)
     async getByPlataforma(plataforma) {
         try {
             const pedidos = await this.getAll();
@@ -51,7 +54,7 @@ class Pedido {
         }
     }
 
-    // Método para obtener pedidos por estado
+    // Filtra pedidos por estado (e.g., pendiente, en_preparacion)
     async getByEstado(estado) {
         try {
             const pedidos = await this.getAll();
@@ -62,12 +65,13 @@ class Pedido {
         }
     }
 
-    // Método para crear nuevo pedido
+    // Crea un nuevo pedido con valores por defecto
     async create(nuevoPedido) {
         try {
             const pedidos = await this.getAll();
+            // Genera un nuevo ID incremental
             const nuevoId = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id)) + 1 : 1;
-            
+            // Crea el objeto pedido con valores por defecto
             const pedido = {
                 id: nuevoId,
                 numeroOrden: nuevoPedido.numeroOrden || `ORD-${nuevoId.toString().padStart(3, '0')}`,
@@ -81,8 +85,8 @@ class Pedido {
                 tiempoEstimado: nuevoPedido.tiempoEstimado || 30,
                 observaciones: nuevoPedido.observaciones || ''
             };
-
             pedidos.push(pedido);
+            // Guarda los cambios en el archivo JSON
             await this.saveAll(pedidos);
             return pedido;
         } catch (error) {
@@ -91,16 +95,16 @@ class Pedido {
         }
     }
 
-    // Método para actualizar pedido
+    // Actualiza un pedido existente
     async update(id, datosActualizados) {
         try {
             const pedidos = await this.getAll();
             const index = pedidos.findIndex(pedido => pedido.id === parseInt(id));
-            
+            // Verifica si el pedido existe
             if (index === -1) {
                 throw new Error('Pedido no encontrado');
             }
-
+            // Actualiza los datos del pedido
             pedidos[index] = { ...pedidos[index], ...datosActualizados };
             await this.saveAll(pedidos);
             return pedidos[index];
@@ -110,16 +114,16 @@ class Pedido {
         }
     }
 
-    // Método para eliminar pedido
+    // Elimina un pedido
     async delete(id) {
         try {
             const pedidos = await this.getAll();
             const pedidosFiltrados = pedidos.filter(pedido => pedido.id !== parseInt(id));
-            
+            // Verifica si el pedido existía
             if (pedidos.length === pedidosFiltrados.length) {
                 throw new Error('Pedido no encontrado');
             }
-
+            // Guarda los cambios en el archivo JSON
             await this.saveAll(pedidosFiltrados);
             return true;
         } catch (error) {
@@ -128,10 +132,11 @@ class Pedido {
         }
     }
 
-    // Método para obtener estadísticas de pedidos
+    // Calcula estadísticas de pedidos por tipo, plataforma y estado
     async getEstadisticas() {
         try {
             const pedidos = await this.getAll();
+            // Genera estadísticas agrupadas
             return {
                 total: pedidos.length,
                 porTipo: {
@@ -159,7 +164,7 @@ class Pedido {
         }
     }
 
-    // Método privado para guardar todos los pedidos
+    // Guarda todos los pedidos en el archivo JSON
     async saveAll(pedidos) {
         try {
             const data = JSON.stringify({ pedidos }, null, 2);
