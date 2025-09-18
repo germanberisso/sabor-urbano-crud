@@ -1,0 +1,137 @@
+extends ../layout
+
+block content
+  - var page = 'empleados'
+  
+  .row.mb-4
+    .col-12
+      .d-flex.justify-content-between.align-items-center
+        h1.display-6
+          i.fas.fa-users.text-success.me-3
+          | Gestión de Empleados
+        a.btn.btn-success(href="/empleados/nuevo")
+          i.fas.fa-user-plus.me-2
+          | Nuevo Empleado
+
+  .row.mb-4
+    .col-12
+      .card
+        .card-header.bg-success.text-white
+          h5.mb-0
+            i.fas.fa-filter.me-2
+            | Filtros por Rol y Área
+        .card-body
+          .row.g-2.mb-3
+            .col-md
+              h6 Por Rol
+            .col-md-2
+              a.btn.btn-outline-danger.btn-sm.w-100(href="/api/empleados/rol/administrador", target="_blank") Admin
+            .col-md-2
+              a.btn.btn-outline-primary.btn-sm.w-100(href="/api/empleados/rol/cocinero", target="_blank") Cocinero
+            .col-md-2
+              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/empleados/rol/repartidor", target="_blank") Repartidor
+            .col-md-2
+              a.btn.btn-outline-info.btn-sm.w-100(href="/api/empleados/rol/mozo", target="_blank") Mozo
+            .col-md-2
+              a.btn.btn-outline-secondary.btn-sm.w-100(href="/api/empleados/rol/encargado_stock", target="_blank") Stock
+          
+          .row.g-2
+            .col-md
+              h6 Por Área
+            .col-md-2
+              a.btn.btn-outline-primary.btn-sm.w-100(href="/api/empleados/area/cocina", target="_blank") Cocina
+            .col-md-2
+              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/empleados/area/reparto", target="_blank") Reparto
+            .col-md-2
+              a.btn.btn-outline-info.btn-sm.w-100(href="/api/empleados/area/salon", target="_blank") Salón
+            .col-md-2
+              a.btn.btn-outline-success.btn-sm.w-100(href="/api/empleados/area/inventario", target="_blank") Inventario
+            .col-md-2
+              a.btn.btn-outline-dark.btn-sm.w-100(href="/api/empleados/area/administracion", target="_blank") Admin
+
+  if empleados && empleados.length > 0
+    .row
+      .col-12
+        .card
+          .card-header.bg-dark.text-white
+            h5.mb-0
+              i.fas.fa-users.me-2
+              | Lista de Empleados (#{empleados.length})
+          .card-body.p-0
+            .table-responsive
+              table.table.table-hover.mb-0
+                thead.table-light
+                  tr
+                    th ID
+                    th Empleado
+                    th Email/Teléfono
+                    th Rol
+                    th Área
+                    th Fecha Ingreso
+                    th Estado
+                    th Acciones
+                tbody
+                  each emp in empleados
+                    tr(class= emp.activo ? '' : 'table-secondary')
+                      td= emp.id
+                      td
+                        strong #{emp.nombre} #{emp.apellido}
+                      td
+                        div
+                          i.fas.fa-envelope.me-1
+                          small= emp.email
+                        div
+                          i.fas.fa-phone.me-1
+                          small= emp.telefono
+                      td
+                        if emp.rol === 'administrador'
+                          span.badge.bg-danger Administrador
+                        else if emp.rol === 'cocinero'
+                          span.badge.bg-primary Cocinero
+                        else if emp.rol === 'repartidor'
+                          span.badge.bg-warning Repartidor
+                        else if emp.rol === 'mozo'
+                          span.badge.bg-info Mozo
+                        else if emp.rol === 'encargado_stock'
+                          span.badge.bg-secondary Enc. Stock
+                      td
+                        if emp.area === 'cocina'
+                          span.badge.bg-primary Cocina
+                        else if emp.area === 'reparto'
+                          span.badge.bg-warning Reparto
+                        else if emp.area === 'salon'
+                          span.badge.bg-info Salón
+                        else if emp.area === 'inventario'
+                          span.badge.bg-success Inventario
+                        else if emp.area === 'administracion'
+                          span.badge.bg-dark Administración
+                      td
+                        small= new Date(emp.fechaIngreso).toLocaleDateString('es-AR')
+                      td
+                        if emp.activo
+                          span.badge.bg-success
+                            i.fas.fa-check.me-1
+                            | Activo
+                        else
+                          span.badge.bg-secondary
+                            i.fas.fa-times.me-1
+                            | Inactivo
+                      td
+                        .btn-group(role="group")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/empleados/${emp.id}`, target="_blank", title="Ver")
+                            i.fas.fa-eye
+                          button.btn.btn-sm.btn-outline-warning(title="Editar")
+                            i.fas.fa-edit
+                          button.btn.btn-sm.btn-outline-danger(title="Desactivar")
+                            i.fas.fa-user-times
+  else
+    .row
+      .col-12
+        .card
+          .card-body.text-center.py-5
+            i.fas.fa-users.text-muted.mb-3(style="font-size: 4rem;")
+            h4.text-muted No hay empleados registrados
+            p.text-muted Registra el primer empleado para comenzar
+            a.btn.btn-success(href="/empleados/nuevo")
+              i.fas.fa-user-plus.me-2
+              | Registrar Primer Empleado

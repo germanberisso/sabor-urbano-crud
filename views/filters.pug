@@ -1,0 +1,181 @@
+extends layout
+
+block content
+  - var page = 'filtros'
+  
+  .row.mb-4
+    .col-12
+      h1.display-6.text-center.mb-4
+        i.fas.fa-filter.text-info.me-3
+        | Sistema de Filtros de Búsqueda
+      p.lead.text-center.text-muted Filtra tareas por estado, prioridad, fecha, empleado, tipo de pedido y plataforma
+
+  .row.g-4.mb-5
+    .col-lg-6
+      .card
+        .card-header.bg-primary.text-white
+          h5.mb-0
+            i.fas.fa-tasks.me-2
+            | Filtros de Tareas
+        .card-body
+          h6.text-muted Por Estado
+          .row.g-2.mb-3
+            .col-4
+              a.btn.btn-outline-warning.w-100(href="/api/tareas?estado=pendiente", target="_blank")
+                i.fas.fa-clock.me-1
+                | Pendientes
+            .col-4
+              a.btn.btn-outline-primary.w-100(href="/api/tareas?estado=en_proceso", target="_blank")
+                i.fas.fa-play.me-1
+                | En Proceso
+            .col-4
+              a.btn.btn-outline-success.w-100(href="/api/tareas?estado=finalizada", target="_blank")
+                i.fas.fa-check.me-1
+                | Finalizadas
+          
+          h6.text-muted Por Prioridad
+          .row.g-2.mb-3
+            .col-4
+              a.btn.btn-outline-danger.w-100(href="/api/tareas?prioridad=alta", target="_blank")
+                i.fas.fa-exclamation-triangle.me-1
+                | Alta
+            .col-4
+              a.btn.btn-outline-warning.w-100(href="/api/tareas?prioridad=media", target="_blank")
+                i.fas.fa-minus.me-1
+                | Media
+            .col-4
+              a.btn.btn-outline-secondary.w-100(href="/api/tareas?prioridad=baja", target="_blank")
+                i.fas.fa-arrow-down.me-1
+                | Baja
+          
+          h6.text-muted Por Área
+          .row.g-2.mb-3
+            .col-6
+              a.btn.btn-outline-danger.w-100(href="/api/tareas/area/gestion_pedidos", target="_blank")
+                i.fas.fa-shopping-cart.me-1
+                | Gestión Pedidos
+            .col-6
+              a.btn.btn-outline-info.w-100(href="/api/tareas/area/control_inventario", target="_blank")
+                i.fas.fa-boxes.me-1
+                | Control Inventario
+
+    .col-lg-6
+      .card
+        .card-header.bg-success.text-white
+          h5.mb-0
+            i.fas.fa-users.me-2
+            | Filtros de Empleados
+        .card-body
+          h6.text-muted Por Rol
+          .row.g-2.mb-3
+            .col-6
+              a.btn.btn-outline-danger.btn-sm.w-100(href="/api/empleados/rol/administrador", target="_blank") Administrador
+            .col-6
+              a.btn.btn-outline-primary.btn-sm.w-100(href="/api/empleados/rol/cocinero", target="_blank") Cocinero
+            .col-6
+              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/empleados/rol/repartidor", target="_blank") Repartidor
+            .col-6
+              a.btn.btn-outline-info.btn-sm.w-100(href="/api/empleados/rol/mozo", target="_blank") Mozo
+            .col-12
+              a.btn.btn-outline-secondary.btn-sm.w-100(href="/api/empleados/rol/encargado_stock", target="_blank") Encargado Stock
+          
+          h6.text-muted Por Área
+          .row.g-2
+            .col-6
+              a.btn.btn-outline-primary.btn-sm.w-100(href="/api/empleados/area/cocina", target="_blank") Cocina
+            .col-6
+              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/empleados/area/reparto", target="_blank") Reparto
+            .col-6
+              a.btn.btn-outline-info.btn-sm.w-100(href="/api/empleados/area/salon", target="_blank") Salón
+            .col-6
+              a.btn.btn-outline-success.btn-sm.w-100(href="/api/empleados/area/inventario", target="_blank") Inventario
+            .col-12
+              a.btn.btn-outline-dark.btn-sm.w-100(href="/api/empleados/area/administracion", target="_blank") Administración
+
+  .row.g-4.mb-4
+    .col-lg-6
+      .card
+        .card-header.bg-warning.text-dark
+          h5.mb-0
+            i.fas.fa-shopping-bag.me-2
+            | Filtros de Pedidos
+        .card-body
+          h6.text-muted Por Tipo
+          .row.g-2.mb-3
+            .col-6
+              a.btn.btn-outline-info.w-100(href="/api/pedidos/tipo/presencial", target="_blank")
+                i.fas.fa-store.me-1
+                | Presencial
+            .col-6
+              a.btn.btn-outline-primary.w-100(href="/api/pedidos/tipo/delivery", target="_blank")
+                i.fas.fa-motorcycle.me-1
+                | Delivery
+          
+          h6.text-muted Por Plataforma
+          .row.g-2
+            .col-6
+              a.btn.btn-outline-danger.btn-sm.w-100(href="/api/pedidos/plataforma/rappi", target="_blank") Rappi
+            .col-6
+              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/pedidos/plataforma/pedidosya", target="_blank") PedidosYa
+            .col-6
+              a.btn.btn-outline-success.btn-sm.w-100(href="/api/pedidos/plataforma/propia", target="_blank") Propia
+            .col-6
+              a.btn.btn-outline-dark.btn-sm.w-100(href="/api/pedidos/plataforma/local", target="_blank") Local
+
+    .col-lg-6
+      .card
+        .card-header.bg-info.text-white
+          h5.mb-0
+            i.fas.fa-boxes.me-2
+            | Filtros de Insumos
+        .card-body
+          h6.text-muted Alertas de Stock
+          .row.g-2.mb-3
+            .col-6
+              a.btn.btn-outline-danger.w-100(href="/api/insumos/bajo-stock", target="_blank")
+                i.fas.fa-exclamation-triangle.me-1
+                | Bajo Stock
+            .col-6
+              a.btn.btn-outline-warning.w-100(href="/api/insumos/alertas", target="_blank")
+                i.fas.fa-bell.me-1
+                | Alertas
+          
+          h6.text-muted Por Categoría
+          .row.g-2
+            .col-6
+              a.btn.btn-outline-success.btn-sm.w-100(href="/api/insumos/categoria/verduras", target="_blank") Verduras
+            .col-6
+              a.btn.btn-outline-danger.btn-sm.w-100(href="/api/insumos/categoria/carnes", target="_blank") Carnes
+            .col-6
+              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/insumos/categoria/panaderia", target="_blank") Panadería
+            .col-6
+              a.btn.btn-outline-info.btn-sm.w-100(href="/api/insumos/categoria/lacteos", target="_blank") Lácteos
+
+  .row
+    .col-12
+      .card
+        .card-header.bg-dark.text-white
+          h5.mb-0
+            i.fas.fa-code.me-2
+            | Filtros Avanzados con Query Parameters
+        .card-body
+          h6 Ejemplos de Filtros Combinados
+          .row
+            .col-md-6
+              h6.text-muted Tareas
+              ul.list-unstyled
+                li
+                  code.small GET /api/tareas/filtrar?estado=pendiente&prioridad=alta
+                li
+                  code.small GET /api/tareas/filtrar?area=gestion_pedidos&empleadoAsignado=2
+                li
+                  code.small GET /api/tareas/filtrar?fechaDesde=2024-01-01&fechaHasta=2024-01-31
+            .col-md-6
+              h6.text-muted Otros Endpoints
+              ul.list-unstyled
+                li
+                  code.small GET /api/empleados/activos
+                li
+                  code.small GET /api/pedidos/estado/pendiente
+                li
+                  code.small GET /api/tareas/urgentes
