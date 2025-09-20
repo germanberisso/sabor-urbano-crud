@@ -5,30 +5,32 @@
       "numeroOrden": "MESA-01",
       "items": [
         {
-          "producto": "Hamburguesa Doble",
-          "cantidad": 1,
-          "precio": 6100
+          "id": 4,
+          "producto": "Ensalada César",
+          "precio": 8000,
+          "cantidad": 3
         },
         {
-          "producto": "Hamburguesa Simple",
-          "cantidad": 1,
-          "precio": 4000
+          "id": 5,
+          "producto": "Wrap de Pollo",
+          "precio": 8000,
+          "cantidad": 3
         }
       ],
-      "total": 10100,
+      "total": 48000,
       "tipo": "presencial",
       "plataforma": "local",
       "estado": "entregado",
       "fechaCreacion": "2025-09-19T12:05:00.000Z",
       "tiempoEstimado": "20",
       "observaciones": "Mesa cerca de la ventana",
-      "itemsText": [
-        "Pizza Muzza",
-        "Gaseosa Coca Cola 500ml"
-      ],
+      "itemsText": "3 x Ensalada César, 3 x Wrap de Pollo",
       "clienteNombre": null,
       "clienteTelefono": null,
-      "clienteDireccion": null
+      "clienteDireccion": null,
+      "nombreCliente": null,
+      "telefonoCliente": null,
+      "direccionCliente": null
     },
     {
       "id": 2,
@@ -372,6 +374,153 @@
       "plataforma": "local",
       "estado": "pendiente",
       "fechaCreacion": "2025-09-20T20:13:31.392Z",
+      "tiempoEstimado": 30,
+      "observaciones": "",
+      "nombreCliente": null,
+      "telefonoCliente": null,
+      "direccionCliente": null
+    },
+    {
+      "id": 18,
+      "numeroOrden": "ORD-018",
+      "items": [
+        {
+          "id": 1,
+          "producto": "Hamburguesa simple con queso",
+          "precio": 5000,
+          "cantidad": 1
+        },
+        {
+          "id": 2,
+          "producto": "Hamburguesa triple con cheddar",
+          "precio": 9500,
+          "cantidad": 1
+        },
+        {
+          "id": 5,
+          "producto": "Wrap de Pollo",
+          "precio": 8000,
+          "cantidad": 1
+        }
+      ],
+      "total": 22500,
+      "tipo": "presencial",
+      "plataforma": "local",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-20T22:51:23.096Z",
+      "tiempoEstimado": 30,
+      "observaciones": "",
+      "nombreCliente": null,
+      "telefonoCliente": null,
+      "direccionCliente": null,
+      "itemsText": "1 x Hamburguesa simple con queso, 1 x Hamburguesa triple con cheddar, 1 x Wrap de Pollo"
+    },
+    {
+      "id": 19,
+      "numeroOrden": "ORD-019",
+      "items": [
+        {
+          "id": 1,
+          "producto": "Hamburguesa simple con queso",
+          "precio": 5000,
+          "cantidad": 1
+        },
+        {
+          "id": 2,
+          "producto": "Hamburguesa triple con cheddar",
+          "precio": 9500,
+          "cantidad": 1
+        },
+        {
+          "id": 3,
+          "producto": "Papas fritas",
+          "precio": 2500,
+          "cantidad": 1
+        }
+      ],
+      "total": 17000,
+      "tipo": "delivery",
+      "plataforma": "pedidosya",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-20T22:56:33.698Z",
+      "tiempoEstimado": 30,
+      "observaciones": "",
+      "nombreCliente": "a",
+      "telefonoCliente": "123",
+      "direccionCliente": "asd"
+    },
+    {
+      "id": 20,
+      "numeroOrden": "ORD-020",
+      "items": [
+        {
+          "id": 1,
+          "producto": "Hamburguesa simple con queso",
+          "precio": 5000,
+          "cantidad": 1
+        },
+        {
+          "id": 2,
+          "producto": "Hamburguesa triple con cheddar",
+          "precio": 9500,
+          "cantidad": 1
+        },
+        {
+          "id": 3,
+          "producto": "Papas fritas",
+          "precio": 2500,
+          "cantidad": 1
+        }
+      ],
+      "total": 17000,
+      "tipo": "delivery",
+      "plataforma": "rappi",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-20T22:58:22.603Z",
+      "tiempoEstimado": 30,
+      "observaciones": "",
+      "nombreCliente": "Manu",
+      "telefonoCliente": "1234",
+      "direccionCliente": "asdasdasd 123"
+    },
+    {
+      "id": 21,
+      "numeroOrden": "ORD-021",
+      "items": [
+        {
+          "id": 1,
+          "producto": "Hamburguesa simple con queso",
+          "precio": 5000,
+          "cantidad": 1
+        }
+      ],
+      "total": 5000,
+      "tipo": "presencial",
+      "plataforma": "local",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-20T23:19:17.662Z",
+      "tiempoEstimado": 30,
+      "observaciones": "",
+      "nombreCliente": null,
+      "telefonoCliente": null,
+      "direccionCliente": null
+    },
+    {
+      "id": 22,
+      "numeroOrden": "ORD-022",
+      "items": [
+        {
+          "id": 1,
+          "producto": "Hamburguesa simple con queso",
+          "precio": 5000,
+          "cantidad": 1
+        }
+      ],
+      "total": 5000,
+      "tipo": "presencial",
+      "plataforma": "local",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-20T23:23:17.277Z",
       "tiempoEstimado": 30,
       "observaciones": "",
       "nombreCliente": null,

@@ -17,7 +17,6 @@ block content
           - var telefonoCliente = pedido.telefonoCliente
           - var direccionCliente = pedido.direccionCliente
 
-          //- IMPORTANTE: agregamos data-pedido-id para usar en el script del cliente
           form#pedidoForm(data-pedido-id=pedido.id)
             // Campos cliente
             .mb-3(id="clienteFields" style=(pedido.tipo !== 'delivery' ? 'display:none;' : ''))
@@ -30,20 +29,28 @@ block content
 
             // Productos
             .mb-3
-            label.form-label Productos
-            - var itemsPedido = (pedido.items || []).filter(i => i) // eliminamos null/undefined
+              label.form-label Productos
+              - var itemsPedido = []
+              - if (pedido.items && Array.isArray(pedido.items) && pedido.items.length > 0)
+                - itemsPedido = pedido.items.filter(i => i && i.producto)
+              - else
+                - itemsPedido = []
 
-            each producto in productos
+              each producto in productos
                 - var seleccionado = false
                 - var cantidadProducto = 1
-                - for (var i = 0; i < itemsPedido.length; i++)
-                    - if (itemsPedido[i] && itemsPedido[i].id === producto.id)
-                        - seleccionado = true
-                        - cantidadProducto = itemsPedido[i].cantidad
+                
+                - if (itemsPedido.length > 0)
+                  - for (var i = 0; i < itemsPedido.length; i++)
+                    - if (itemsPedido[i] && itemsPedido[i].producto === producto.nombre)
+                      - seleccionado = true
+                      - cantidadProducto = itemsPedido[i].cantidad || 1
+                
                 .form-check
-                    input.form-check-input(type="checkbox", name=`items[${producto.id}][seleccionado]`, value="true", checked=seleccionado)
-                    label.form-check-label= producto.nombre + ' $' + producto.precio
-                    input.form-control(type="number", min="1", name=`items[${producto.id}][cantidad]`, value=cantidadProducto, style="width:80px; display:inline-block; margin-left:10px;")
+                  input.form-check-input(type="checkbox", name=`items[${producto.id}][seleccionado]`, value="true", checked=seleccionado, onchange="toggleQuantityField(this)")
+                  label.form-check-label= producto.nombre + ' $' + producto.precio
+                  // CAMBIO: Agregar disabled cuando no está seleccionado
+                  input.form-control(type="number", min="1", name=`items[${producto.id}][cantidad]`, value=cantidadProducto, disabled=!seleccionado, style="width:80px; display:inline-block; margin-left:10px;")
 
             .mb-3
               label.form-label(for="total") Total
@@ -90,8 +97,21 @@ block content
         i.fas.fa-arrow-left.me-2
         | Volver
 
-  //- Script cliente: arma payload JSON con items anidados y usa data-pedido-id
   script.
+    // NUEVA FUNCIÓN: Habilitar/deshabilitar campo de cantidad
+    function toggleQuantityField(checkbox) {
+      const productId = checkbox.name.match(/items\[(\d+)\]/)[1];
+      const quantityInput = document.querySelector(`input[name="items[${productId}][cantidad]"]`);
+      
+      if (checkbox.checked) {
+        quantityInput.disabled = false;
+        quantityInput.focus(); // Opcionalmente hacer foco en el campo
+      } else {
+        quantityInput.disabled = true;
+        quantityInput.value = 1; // Resetear a 1 cuando se desmarca
+      }
+    }
+
     (function () {
       const pedidoForm = document.getElementById('pedidoForm');
       const tipoSelect = document.getElementById('tipo');
@@ -104,7 +124,6 @@ block content
       ajustarCampos();
       tipoSelect.addEventListener('change', ajustarCampos);
 
-      // Construye { [idProducto]: { seleccionado: true, cantidad: n } } SOLO para checkeados
       function buildItemsPayload() {
         const out = {};
         const checks = pedidoForm.querySelectorAll('input.form-check-input[name^="items["][name$="[seleccionado]"]');
@@ -131,7 +150,6 @@ block content
         const tiempoEstimado = fd.get('tiempoEstimado');
         const observaciones = fd.get('observaciones') || '';
 
-        // Cliente (solo si delivery)
         let nombreCliente, telefonoCliente, direccionCliente;
         if (tipo === 'delivery') {
           nombreCliente = (fd.get('nombreCliente') || '').trim();
@@ -139,10 +157,8 @@ block content
           direccionCliente = (fd.get('direccionCliente') || '').trim();
         }
 
-        // Items anidados como espera el backend
         const items = buildItemsPayload();
 
-        // Validaciones mínimas
         if (!pedidoId) return alert('No se encontró el ID del pedido.');
         if (!tipo || !plataforma) return alert('Completá Tipo y Plataforma.');
         if (Object.keys(items).length === 0) return alert('Debes seleccionar al menos un producto.');
@@ -150,7 +166,6 @@ block content
           return alert('Faltan datos del cliente para delivery.');
         }
 
-        // Payload exacto para PedidosController.update
         const payload = {
           items,
           tipo,
