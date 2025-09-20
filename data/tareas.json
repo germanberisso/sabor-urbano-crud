@@ -17,9 +17,9 @@
     {
       "id": 2,
       "titulo": "Despachar pedido en_camino",
-      "descripcion": "Entregar RAPPI-4522 al repartidor",
+      "descripcion": "Entregar RAPPI-4522 al repartidor asignado",
       "area": "gestion_pedidos",
-      "estado": "pendiente",
+      "estado": "en_proceso",
       "prioridad": "alta",
       "empleadoAsignado": 3,
       "pedidoAsociado": 5,

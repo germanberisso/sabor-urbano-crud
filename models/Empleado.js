@@ -52,11 +52,11 @@ class Empleado {
         }
     }
 
-    async getByRol(rol) { // Filtra empleados por rol y solo los activos
+    async getByRol(rol) { // Filtra empleados por rol
         try {
             const empleados = await this.getAll(); // Obtiene todos
-            return empleados.filter(empleado =>  // Filtra por rol y activo
-                empleado.rol === rol && empleado.activo // Solo si rol coincide y está activo
+            return empleados.filter(empleado =>  // Filtra por rol
+                empleado.rol === rol// Solo si rol coincide
             );
         } catch (error) {
             console.error('Error al filtrar por rol:', error); // Imprime error
@@ -64,11 +64,11 @@ class Empleado {
         }
     }
 
-    async getByArea(area) { // Filtra empleados por área y solo los activos
+    async getByArea(area) { // Filtra empleados por área
         try {
             const empleados = await this.getAll(); // Obtiene todos
-            return empleados.filter(empleado =>  // Filtra por área y activo
-                empleado.area === area && empleado.activo // Coincide área y activo
+            return empleados.filter(empleado =>  // Filtra por área
+                empleado.area === area // Coincide área
             );
         } catch (error) {
             console.error('Error al filtrar por área:', error); // Imprime error
@@ -156,8 +156,7 @@ class Empleado {
             const empleados = await this.getAll(); // Obtiene todos
             return !empleados.some(emp =>  // Retorna true si NO hay coincidencia
                 emp.email === email &&  // Email coincide
-                emp.id !== idExcluir &&  // No es el ID excluido
-                emp.activo // Y está activo
+                emp.id !== idExcluir // No es el ID excluido              
             );
         } catch (error) {
             console.error('Error al validar email:', error); // Imprime
