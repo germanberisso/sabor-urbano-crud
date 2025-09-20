@@ -13,16 +13,12 @@ block content
     .col-lg-8
       .card
         .card-body
-          - var nombreCliente = ''
-          - var telefonoCliente = ''
-          - var direccionCliente = ''
-          - if (pedido.cliente) {
-          -   nombreCliente = pedido.cliente.nombre
-          -   telefonoCliente = pedido.cliente.telefono
-          -   direccionCliente = pedido.cliente.direccion
-          - }
+          - var nombreCliente = pedido.nombreCliente
+          - var telefonoCliente = pedido.telefonoCliente
+          - var direccionCliente = pedido.direccionCliente
 
-          form#pedidoForm
+          //- IMPORTANTE: agregamos data-pedido-id para usar en el script del cliente
+          form#pedidoForm(data-pedido-id=pedido.id)
             // Campos cliente
             .mb-3(id="clienteFields" style=(pedido.tipo !== 'delivery' ? 'display:none;' : ''))
               label.form-label(for="nombreCliente") Nombre del Cliente
@@ -32,8 +28,6 @@ block content
               label.form-label(for="direccionCliente") Dirección
               input.form-control(type="text", id="direccionCliente", name="direccionCliente", value=direccionCliente)
 
-            // Productos
-            //.mb-3
             // Productos
             .mb-3
             label.form-label Productos
@@ -96,40 +90,99 @@ block content
         i.fas.fa-arrow-left.me-2
         | Volver
 
+  //- Script cliente: arma payload JSON con items anidados y usa data-pedido-id
   script.
-    const pedidoForm = document.getElementById('pedidoForm');
-    const tipoSelect = document.getElementById('tipo');
-    const clienteFields = document.getElementById('clienteFields');
+    (function () {
+      const pedidoForm = document.getElementById('pedidoForm');
+      const tipoSelect = document.getElementById('tipo');
+      const clienteFields = document.getElementById('clienteFields');
+      const pedidoId = pedidoForm?.dataset?.pedidoId;
 
-    function ajustarCampos() {
-      clienteFields.style.display = tipoSelect.value === 'delivery' ? 'block' : 'none';
-    }
-
-    ajustarCampos();
-    tipoSelect.addEventListener('change', ajustarCampos);
-
-    pedidoForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(pedidoForm);
-      const data = Object.fromEntries(formData);
-
-      data.total = Number(data.total);
-
-      try {
-        const response = await fetch(`/api/pedidos/${pedido.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const result = await response.json();
-        if (result.success) {
-          alert('Pedido actualizado exitosamente');
-          window.location.href = '/pedidos';
-        } else {
-          alert(`Error: ${result.message}`);
-        }
-      } catch (error) {
-        console.error('Error al actualizar pedido:', error);
-        alert('Error al actualizar pedido');
+      function ajustarCampos() {
+        clienteFields.style.display = tipoSelect.value === 'delivery' ? 'block' : 'none';
       }
-    });
+      ajustarCampos();
+      tipoSelect.addEventListener('change', ajustarCampos);
+
+      // Construye { [idProducto]: { seleccionado: true, cantidad: n } } SOLO para checkeados
+      function buildItemsPayload() {
+        const out = {};
+        const checks = pedidoForm.querySelectorAll('input.form-check-input[name^="items["][name$="[seleccionado]"]');
+        checks.forEach((chk) => {
+          const m = chk.name.match(/^items\[(\d+)\]\[seleccionado\]$/);
+          if (!m) return;
+          const id = m[1];
+          const qtyInput = pedidoForm.querySelector(`input[name="items[${id}][cantidad]"]`);
+          const cantidad = Number(qtyInput?.value || 1);
+          if (chk.checked) {
+            out[id] = { seleccionado: true, cantidad: isNaN(cantidad) ? 1 : Math.max(1, cantidad) };
+          }
+        });
+        return out;
+      }
+
+      pedidoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fd = new FormData(pedidoForm);
+        const tipo = fd.get('tipo');
+        const plataforma = fd.get('plataforma');
+        const estado = fd.get('estado');
+        const tiempoEstimado = fd.get('tiempoEstimado');
+        const observaciones = fd.get('observaciones') || '';
+
+        // Cliente (solo si delivery)
+        let nombreCliente, telefonoCliente, direccionCliente;
+        if (tipo === 'delivery') {
+          nombreCliente = (fd.get('nombreCliente') || '').trim();
+          telefonoCliente = (fd.get('telefonoCliente') || '').trim();
+          direccionCliente = (fd.get('direccionCliente') || '').trim();
+        }
+
+        // Items anidados como espera el backend
+        const items = buildItemsPayload();
+
+        // Validaciones mínimas
+        if (!pedidoId) return alert('No se encontró el ID del pedido.');
+        if (!tipo || !plataforma) return alert('Completá Tipo y Plataforma.');
+        if (Object.keys(items).length === 0) return alert('Debes seleccionar al menos un producto.');
+        if (tipo === 'delivery' && (!nombreCliente || !telefonoCliente || !direccionCliente)) {
+          return alert('Faltan datos del cliente para delivery.');
+        }
+
+        // Payload exacto para PedidosController.update
+        const payload = {
+          items,
+          tipo,
+          plataforma,
+          estado,
+          tiempoEstimado: tiempoEstimado ? Number(tiempoEstimado) : undefined,
+          observaciones
+        };
+        if (tipo === 'delivery') {
+          payload.nombreCliente = nombreCliente;
+          payload.telefonoCliente = telefonoCliente;
+          payload.direccionCliente = direccionCliente;
+        }
+
+        console.log('Payload JSON a enviar:', payload);
+
+        try {
+          const resp = await fetch(`/api/pedidos/${pedidoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await resp.json();
+          if (result?.success) {
+            alert('Pedido actualizado exitosamente');
+            window.location.href = '/pedidos';
+          } else {
+            alert(`Error: ${result?.message || 'No se pudo actualizar'}`);
+          }
+        } catch (err) {
+          console.error('Error al actualizar pedido:', err);
+          alert('Error al actualizar pedido');
+        }
+      });
+    })();
