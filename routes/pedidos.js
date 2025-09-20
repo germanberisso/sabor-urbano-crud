@@ -60,10 +60,10 @@ router.get('/tipo/:tipo', (req, res) => pedidosController.getByTipo(req, res)); 
 router.get('/plataforma/:plataforma', (req, res) => pedidosController.getByPlataforma(req, res)); // GET /pedidos/plataforma/:plat: por plat
 router.get('/:id', (req, res) => pedidosController.getById(req, res)); // GET /pedidos/:id: uno
 
-router.post('/',  // POST /pedidos: crea
-    ValidationMiddleware.validarCamposRequeridos(['cliente', 'items', 'total', 'tipo', 'plataforma', 'estado']),  // Obligatorios
-    validarPedido,  // Específicos
-    (req, res) => pedidosController.create(req, res) // Controlador
+router.post('/', 
+    ValidationMiddleware.validarCamposRequeridos(['clienteId', 'itemsText', 'total', 'tipo', 'plataforma', 'estado']),
+    validarPedido,
+    (req, res) => pedidosController.create(req, res)
 );
 
 router.put('/:id',  // PUT /pedidos/:id: actualiza

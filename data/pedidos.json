@@ -167,6 +167,49 @@
       "fechaCreacion": "2025-09-19T13:35:00.000Z",
       "tiempoEstimado": 30,
       "observaciones": ""
+    },
+    {
+      "id": 8,
+      "numeroOrden": "ORD-008",
+      "clienteId": 1,
+      "items": [
+        {
+          "producto": "Tartas de Manzana",
+          "cantidad": 2,
+          "precio": 15000
+        }
+      ],
+      "total": "15000",
+      "tipo": "delivery",
+      "plataforma": "pedidosya",
+      "estado": "en_preparacion",
+      "fechaCreacion": "2025-09-20T03:11:45.620Z",
+      "tiempoEstimado": "30",
+      "observaciones": ""
+    },
+    {
+      "id": 9,
+      "numeroOrden": "ORD-009",
+      "clienteId": 1,
+      "items": [
+        {
+          "producto": "Hamburguesa",
+          "cantidad": 2,
+          "precio": 3333.3333333333335
+        },
+        {
+          "producto": "Gaseosa Cola 500ml",
+          "cantidad": 1,
+          "precio": 1666.6666666666667
+        }
+      ],
+      "total": 5000,
+      "tipo": "delivery",
+      "plataforma": "rappi",
+      "estado": "pendiente",
+      "fechaCreacion": "2025-09-20T03:38:54.014Z",
+      "tiempoEstimado": "30",
+      "observaciones": "Entregar en puerta principal"
     }
   ]
 }

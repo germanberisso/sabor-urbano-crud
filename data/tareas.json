@@ -111,6 +111,20 @@
       "fechaCreacion": "2025-09-19T13:26:00.000Z",
       "fechaInicio": null,
       "fechaFinalizacion": null
+    },
+    {
+      "id": 9,
+      "titulo": "Confirmar RAPPI-888",
+      "descripcion": "",
+      "area": "gestion_pedidos",
+      "estado": "pendiente",
+      "prioridad": "alta",
+      "empleadoAsignado": 2,
+      "pedidoAsociado": 1,
+      "observaciones": "",
+      "fechaCreacion": "2025-09-20T03:05:13.989Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null
     }
   ]
 }
