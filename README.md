@@ -4,7 +4,7 @@
 ![Pug](https://img.shields.io/badge/Pug-3.0.2-orange.svg)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-5.1.3-purple.svg)
 
-Sistema de gestión integral para restaurante desarrollado con Node.js, Express y Programación Orientada a Objetos (módulos ES6). Incluye API REST completa para operaciones CRUD, interfaces web responsivas con vistas Pug para gestión visual y un sistema de filtros avanzado para tareas.
+Sistema de gestión integral para el restaurante "Sabor Urbano", desarrollado con Node.js, Express y Programación Orientada a Objetos (ES6 modules). Incluye una API REST completa para operaciones CRUD, interfaces web responsivas con Pug para gestión visual, y filtros avanzados para tareas. Resuelve la unificación de pedidos (presenciales y delivery) y el control de inventario, con relaciones explícitas entre modelos: Cliente-Pedido, Tarea-Pedido y Tarea-Empleado.
 
 ## Tabla de Contenidos
 - [Características](#características)
@@ -15,54 +15,59 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 - [Interfaces Web](#interfaces-web)
 - [Testing](#testing)
 - [Estructura del Proyecto](#estructura-del-proyecto)
+- [Normalización de Datos](#normalización-de-datos)
 - [Tecnologías](#tecnologías)
 - [Ejemplos](#ejemplos)
-- [Normalización de Datos](#normalización-de-datos)
 - [Contribución](#contribución)
 - [Licencia](#licencia)
+- [Responsabilidades del Equipo](#responsabilidades-del-equipo)
+- [Bibliografía](#bibliografía)
 
 ## Características
 
 ### Funcionalidades Principales
-- **Gestión de Tareas**: Control de actividades por área (gestión de pedidos o control de inventario), con estados (pendiente, en proceso, finalizada) y prioridades (alta, media, baja). Soporte para asignación a empleados y asociación con pedidos.
-- **Gestión de Empleados**: Registro, edición y eliminación de empleados por roles (administrador, cocinero, repartidor, mozo, encargado_stock) y áreas (cocina, reparto, salón, inventario, administración).
-- **Gestión de Clientes**: Registro de clientes con validación de email único y búsqueda por nombre/apellido.
-- **Gestión de Pedidos**: Control de pedidos presenciales o delivery, con plataformas (Rappi, PedidosYa, propia, local). Parseo de ítems desde texto y cálculo proporcional de precios.
-- **Control de Inventario**: Manejo de insumos por categorías (alimentos, bebidas, limpieza, utensilios, otros), con actualización de stock, descuentos y alertas de stock bajo.
-- **Sistema de Filtros**: Filtros combinados para tareas (por estado, prioridad, área, empleado, tipo de pedido, plataforma y rangos de fechas).
+- **Gestión de Tareas**: Control de actividades por áreas (gestión de pedidos, control de inventario). Soporta estados (pendiente, en proceso, finalizada), prioridades (alta, media, baja), asignación a empleados y asociación opcional con pedidos.
+- **Gestión de Empleados**: Registro, edición y eliminación con roles (administrador, cocinero, repartidor, mozo, encargado_stock) y áreas (cocina, reparto, salón, inventario, administración).
+- **Gestión de Clientes**: Registro con validación de email único y búsqueda por nombre/apellido.
+- **Gestión de Pedidos**: Unifica pedidos presenciales y delivery (plataformas: Rappi, PedidosYa, propia, local). Parseo de ítems desde texto y cálculo proporcional de precios.
+- **Control de Inventario**: Manejo de insumos por categorías (alimentos, bebidas, limpieza, utensilios, otros), con alertas de stock bajo/sin stock.
+- **Filtros de Tareas**: Combina estado, prioridad, fechas (creación, inicio, finalización), empleado asignado, tipo de pedido (presencial/delivery) y plataforma.
+- **Relaciones entre Modelos**:
+  - **Cliente-Pedido**: Cada pedido está vinculado a un cliente mediante `clienteId`.
+  - **Tarea-Pedido**: Tareas de gestión de pedidos pueden asociarse a un pedido vía `pedidoAsociado`.
+  - **Tarea-Empleado**: Tareas pueden asignarse a un empleado vía `empleadoAsignado`.
 
 ### Características Técnicas
-- API REST con operaciones CRUD y filtros avanzados.
-- Modelos basados en Programación Orientada a Objetos para manejo de datos JSON.
-- Middleware personalizado para validaciones (campos requeridos, email, números, fechas) y logging.
-- Interfaces web con formularios interactivos y tablas responsivas usando Bootstrap.
-- Script de normalización para migración y validación de datos JSON.
-- Validación de unicidad y formato en campos clave (emails, stocks, fechas).
-- Uso de archivos JSON como base de datos simulada para simplicidad.
+- API REST con CRUD y filtros avanzados, usando ES6 modules (migrado desde CommonJS).
+- Modelos POO para entidades (Cliente, Empleado, Pedido, Insumo, Tarea).
+- Middleware personalizado para validaciones (campos requeridos, email, números, fechas).
+- Vistas Pug con formularios y tablas responsivas (Bootstrap) para CRUD completo.
+- Base de datos JSON con validación de referencias cruzadas.
+- Script de normalización para migración de datos y backups automáticos.
 
 ## Arquitectura
 
 ```
 📁 sabor-urbano-crud/
-├── 🎮 controllers/            # Controladores con lógica de negocio
+├── 🎮 controllers/            # Lógica de negocio
 │   ├── clientesController.js
 │   ├── empleadosController.js
 │   ├── insumosController.js
 │   ├── pedidosController.js
 │   └── tareasController.js
-├── 🏗️ models/                # Modelos POO para manejo de datos
+├── 🏗️ models/                # Clases POO con relaciones
 │   ├── Cliente.js
 │   ├── Empleado.js
 │   ├── Insumo.js
 │   ├── Pedido.js
 │   └── Tarea.js
-├── 🛣️ routes/                # Rutas de la API REST
+├── 🛣️ routes/                # Rutas API y vistas
 │   ├── clientes.js
 │   ├── empleados.js
 │   ├── insumos.js
 │   ├── pedidos.js
 │   └── tareas.js
-├── 🎨 views/                 # Vistas Pug para interfaces web
+├── 🎨 views/                 # Vistas Pug
 │   ├── layout.pug
 │   ├── error.pug
 │   ├── filters.pug
@@ -82,7 +87,7 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 │       ├── index.pug
 │       ├── nueva.pug
 │       └── editar.pug
-├── 🛡️ middleware/            # Middleware personalizado
+├── 🛡️ middleware/            # Validaciones personalizadas
 │   └── validation.js
 ├── 📊 data/                 # Base de datos JSON
 │   ├── areas.json
@@ -92,19 +97,19 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 │   ├── pedidos.json
 │   ├── roles.json
 │   └── tareas.json
-├── 🔄 scripts/               # Scripts de utilidad
+├── 🔄 scripts/               # Utilidades
 │   └── normalizar_datos_v1.js
 ├── ⚙️ package.json          # Dependencias
-└── 🚀 app.js               # Servidor principal
+└── 🚀 app.js               # Servidor Express
 ```
 
 ## Instalación
 
 ### Prerrequisitos
-- Node.js v18 o superior.
-- npm v8 o superior.
+- Node.js v18+.
+- npm v8+.
 - Editor de código (VS Code recomendado).
-- Thunder Client para testing de API (opcional).
+- Thunder Client/Postman para pruebas.
 
 ### Instalación Paso a Paso
 1. Clonar el repositorio:
@@ -134,31 +139,30 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 
 4. Iniciar el servidor:
    ```bash
-   # Desarrollo (con auto-reload)
+   # Desarrollo (auto-reload)
    npm run dev
-
    # Producción
    npm start
    ```
 
-5. Verificar instalación:
+5. Verificar:
    - Servidor: http://localhost:3000 (redirige a /tareas).
    - API: http://localhost:3000/api/clientes.
-   - Interfaces: http://localhost:3000/tareas.
+   - Vistas: http://localhost:3000/tareas.
 
 ## Uso
 
-### Acceso a las Interfaces Web
+### Interfaces Web
 | URL | Descripción |
 |-----|-------------|
 | http://localhost:3000 | Redirige a tareas |
-| http://localhost:3000/tareas | Lista, creación y edición de tareas |
+| http://localhost:3000/tareas | Lista, crear, editar tareas |
 | http://localhost:3000/empleados | Gestión de empleados |
 | http://localhost:3000/pedidos | Gestión de pedidos |
 | http://localhost:3000/insumos | Control de inventario |
 | http://localhost:3000/filtros | Filtros avanzados para tareas |
 
-### Acceso a la API
+### API
 - **Base URL**: http://localhost:3000/api
 - **Formato**: JSON
 - **Métodos**: GET, POST, PUT, DELETE, PATCH
@@ -168,8 +172,8 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 ### Clientes (/api/clientes)
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | / | Obtener todos los clientes |
-| GET | /:id | Obtener cliente por ID |
+| GET | / | Todos los clientes |
+| GET | /:id | Cliente por ID |
 | GET | /buscar?nombre=...&apellido=... | Buscar por nombre/apellido |
 | GET | /validar-email?email=... | Validar email único |
 | POST | / | Crear cliente |
@@ -179,13 +183,13 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 ### Empleados (/api/empleados)
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | / | Obtener todos los empleados |
-| GET | /:id | Obtener empleado por ID |
+| GET | / | Todos los empleados |
+| GET | /:id | Empleado por ID |
 | GET | /rol/:rol | Filtrar por rol |
 | GET | /area/:area | Filtrar por área |
 | GET | /validar-email?email=... | Validar email único |
-| GET | /roles | Obtener roles disponibles |
-| GET | /areas | Obtener áreas disponibles |
+| GET | /roles | Roles disponibles |
+| GET | /areas | Áreas disponibles |
 | POST | / | Crear empleado |
 | PUT | /:id | Actualizar empleado |
 | DELETE | /:id | Eliminar empleado |
@@ -193,184 +197,194 @@ Sistema de gestión integral para restaurante desarrollado con Node.js, Express 
 ### Pedidos (/api/pedidos)
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | / | Obtener todos los pedidos |
-| GET | /:id | Obtener pedido por ID |
+| GET | / | Todos los pedidos |
+| GET | /:id | Pedido por ID |
 | GET | /tipo/:tipo | Filtrar por tipo (presencial/delivery) |
 | GET | /plataforma/:plataforma | Filtrar por plataforma |
 | GET | /estado/:estado | Filtrar por estado |
-| POST | / | Crear pedido |
+| POST | / | Crear pedido (valida clienteId) |
 | PUT | /:id | Actualizar pedido |
 | DELETE | /:id | Eliminar pedido |
 
 ### Insumos (/api/insumos)
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | / | Obtener todos los insumos |
-| GET | /:id | Obtener insumo por ID |
+| GET | / | Todos los insumos |
+| GET | /:id | Insumo por ID |
 | GET | /bajo-stock | Insumos con stock bajo |
-| GET | /alertas | Alertas de stock bajo o sin stock |
+| GET | /alertas | Alertas de stock |
 | GET | /categoria/:categoria | Filtrar por categoría |
 | POST | / | Crear insumo |
 | PUT | /:id | Actualizar insumo |
-| PUT | /:id/stock | Actualizar stock absoluto |
+| PUT | /:id/stock | Actualizar stock |
 | PUT | /:id/descontar | Descontar stock |
 | DELETE | /:id | Eliminar insumo |
 
 ### Tareas (/api/tareas)
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| GET | / | Obtener todas (soporta filtros query) |
-| GET | /:id | Obtener tarea por ID |
+| GET | / | Todas (con filtros query) |
+| GET | /:id | Tarea por ID |
 | GET | /area/:area | Filtrar por área |
-| POST | / | Crear tarea |
+| POST | / | Crear tarea (valida empleadoAsignado, pedidoAsociado) |
 | PUT | /:id | Actualizar tarea |
 | PATCH | /:id/iniciar | Iniciar tarea |
 | PATCH | /:id/finalizar | Finalizar tarea |
 | DELETE | /:id | Eliminar tarea |
 
 ## Interfaces Web
-- **Tareas**: Tabla con filtros por estado, prioridad y área. Formularios para crear/editar tareas con asignación de empleados y pedidos.
-- **Empleados**: Tabla con información de contacto, rol y área. Formularios con validación de email único y selects para roles/áreas.
-- **Pedidos**: Lista con detalles de cliente, ítems y estado. Formularios para parsear ítems desde texto.
-- **Insumos**: Tabla con stock y alertas visuales (bajo_stock, sin_stock). Formularios para gestionar stock.
-- **Filtros**: Interfaz para combinar filtros en tareas (estado, prioridad, área, fechas).
+- **Tareas**: Tabla con filtros (estado, prioridad, área). Formularios para crear/editar con selects para empleados/pedidos, soportando CRUD completo.
+- **Empleados**: Tabla con rol/área. Formularios con validación de email.
+- **Pedidos**: Lista con cliente/ítems. Formularios parsean ítems desde texto.
+- **Insumos**: Tabla con alertas (bajo_stock/sin_stock). Formularios para stock.
+- **Filtros**: Interfaz para combinar filtros en tareas.
 
 ## Testing
-Prueba la API con Thunder Client o Postman. Ejemplos:
+Prueba con Thunder Client/Postman. Ejemplos:
+- **Crear pedido (relación con cliente)**:
+  ```http
+  POST http://localhost:3000/api/pedidos
+  Content-Type: application/json
 
-- **Crear tarea**:
+  {
+    "clienteId": 1,
+    "itemsText": "2 hamburguesas, 1 gaseosa",
+    "total": 5000,
+    "tipo": "delivery",
+    "plataforma": "rappi"
+  }
+  ```
+- **Crear tarea (relación con empleado/pedido)**:
   ```http
   POST http://localhost:3000/api/tareas
   Content-Type: application/json
 
   {
-    "titulo": "Confirmar pedido",
-    "descripcion": "Verificar pedido RAPPI-456",
+    "titulo": "Confirmar RAPPI-456",
     "area": "gestion_pedidos",
     "prioridad": "alta",
-    "empleadoAsignado": 2
+    "empleadoAsignado": 2,
+    "pedidoAsociado": 1
   }
   ```
-
-- **Filtrar tareas pendientes de alta prioridad**:
+- **Filtrar tareas**:
   ```http
   GET http://localhost:3000/api/tareas?estado=pendiente&prioridad=alta
   ```
-
-- **Validar email único**:
+- **Error (clienteId inválido)**:
   ```http
-  GET http://localhost:3000/api/empleados/validar-email?email=juan@example.com
-  ```
-
-- **Error por datos faltantes**:
-  ```http
-  POST http://localhost:3000/api/clientes
+  POST http://localhost:3000/api/pedidos
   Content-Type: application/json
 
   {
-    "nombre": "Test"
+    "clienteId": 999,
+    "itemsText": "1 pizza"
   }
   ```
 
 ## Estructura del Proyecto
 
 ### Modelos (POO)
-- Clases para cada entidad (`Cliente`, `Empleado`, `Insumo`, `Pedido`, `Tarea`) con métodos para CRUD y filtros.
-- Ejemplo: `Tarea.filtrar()` soporta combinaciones de estado, prioridad, área, etc.
+- Clases: `Cliente`, `Empleado`, `Insumo`, `Pedido`, `Tarea`.
+- Relaciones:
+  - **Cliente-Pedido**: `pedidos.json` usa `clienteId` (valida con `Cliente.getById`).
+  - **Tarea-Pedido**: `tareas.json` usa `pedidoAsociado` (valida con `Pedido.getById`).
+  - **Tarea-Empleado**: `tareas.json` usa `empleadoAsignado` (valida con `Empleado.getById`).
+- Métodos: CRUD (`getAll`, `create`, `update`, `delete`), filtros (`Tarea.filtrar`).
 
 ### Controladores
-- Lógica de negocio, como parseo de ítems en pedidos o validación de stock.
+- Manejan lógica (ej: parseo de ítems en `pedidosController.js`).
 
 ### Rutas
-- API REST con endpoints para CRUD y filtros.
-- Rutas de vistas para formularios (`/tareas/nueva`, `/empleados/editar/:id`).
+- API: `/api/:recurso/:id`.
+- Vistas: `/:recurso/nueva`, `/:recurso/editar/:id`.
 
 ### Middleware
-- Validaciones: campos requeridos, email, números, fechas.
-- Sanitización de datos y logging de solicitudes.
+- Validaciones: campos requeridos, email, números, fechas (en `validation.js`).
 
-### Data
-- **clientes.json**: Clientes con id, nombre, apellido, email, teléfono.
-- **empleados.json**: Empleados con rol y área.
-- **insumos.json**: Insumos con stock, categoría y estado.
-- **pedidos.json**: Pedidos con ítems, cliente y estado.
-- **tareas.json**: Tareas con área, prioridad y referencias a empleados/pedidos.
-- **roles.json** y **areas.json**: Validación de formularios.
+### Data (JSON)
+- **clientes.json**: `{ id, nombre, apellido, email, telefono }`.
+- **empleados.json**: `{ id, nombre, apellido, email, telefono, rol, area, fechaIngreso }`.
+- **pedidos.json**: `{ id, numeroOrden, clienteId, items, total, tipo, plataforma, estado, fechaCreacion, tiempoEstimado, observaciones }`.
+- **insumos.json**: `{ id, nombre, categoria, stock, stockMinimo, unidadMedida, proveedor, ultimaActualizacion, estado }`.
+- **tareas.json**: `{ id, titulo, descripcion, area, estado, prioridad, empleadoAsignado, pedidoAsociado, observaciones, fechaCreacion, fechaInicio, fechaFinalizacion }`.
+- **roles.json**, **areas.json**: Validación de formularios.
 
-### Ejemplo de clientes.json
+### Ejemplo de pedidos.json
 ```json
 {
-  "clientes": [
+  "pedidos": [
     {
       "id": 1,
-      "nombre": "Lucía",
-      "apellido": "Martínez",
-      "email": "lucia.martinez@example.com",
-      "telefono": "11-2233-4455"
+      "numeroOrden": "MESA-01",
+      "clienteId": 5,
+      "items": [
+        { "producto": "Pizza Muzza", "cantidad": 1, "precio": 3033.33 }
+      ],
+      "total": 9100,
+      "tipo": "presencial",
+      "plataforma": "local",
+      "estado": "entregado"
     }
   ]
 }
 ```
-- **Campos**: `id` (número, requerido), `nombre` (string, requerido), `apellido` (string, requerido), `email` (string único, requerido), `telefono` (string, opcional).
-
-## Tecnologías
-- **Backend**: Node.js v18+, Express 4.18.2.
-- **Vistas**: Pug 3.0.2, Bootstrap 5.1.3, Font Awesome 6.0.0.
-- **Desarrollo**: Nodemon, Thunder Client.
-
-## Ejemplos
-
-- **Crear empleado**:
-  ```bash
-  curl -X POST http://localhost:3000/api/empleados -H "Content-Type: application/json" -d '{"nombre":"Juan","apellido":"Doe","email":"juan@example.com","telefono":"11-1234-5678","rol":"cocinero","area":"cocina"}'
-  ```
-
-- **Crear pedido**:
-  ```bash
-  curl -X POST http://localhost:3000/api/pedidos -H "Content-Type: application/json" -d '{"clienteId":1,"itemsText":"2 hamburguesas, 1 gaseosa","total":5000,"tipo":"delivery","plataforma":"rappi"}'
-  ```
-
-- **Descontar stock**:
-  ```bash
-  curl -X PUT http://localhost:3000/api/insumos/1/descontar -H "Content-Type: application/json" -d '{"cantidad":5}'
-  ```
-
-- **Filtrar insumos con stock bajo**:
-  ```bash
-  curl http://localhost:3000/api/insumos/bajo-stock
-  ```
 
 ## Normalización de Datos
-El script `normalizar_datos_v1.js` asegura la integridad de los archivos JSON:
+`normalizar_datos_v1.js` asegura integridad de JSON:
 - Normaliza categorías de insumos (ej: "verduras" → "alimentos").
-- Convierte valores numéricos (stock, total, etc.).
-- Valida referencias en tareas (empleados, pedidos).
+- Convierte valores numéricos (stock, total).
+- Valida referencias (clienteId, empleadoAsignado, pedidoAsociado).
 - Completa campos faltantes (observaciones, fechas).
-- Genera backups automáticos.
-
+- Genera backups.
 **Ejecutar**:
 ```bash
 npm run normalizar
 ```
 
+## Tecnologías
+- **Backend**: Node.js v18+, Express 4.18.2 (ES6 modules).
+- **Vistas**: Pug 3.0.2, Bootstrap 5.1.3, Font Awesome 6.0.0.
+- **Desarrollo**: Nodemon, Thunder Client.
+
+## Ejemplos
+- **Crear empleado**:
+  ```bash
+  curl -X POST http://localhost:3000/api/empleados -H "Content-Type: application/json" -d '{"nombre":"Juan","apellido":"Doe","email":"juan@example.com","telefono":"11-1234-5678","rol":"cocinero","area":"cocina"}'
+  ```
+- **Crear pedido (con clienteId)**:
+  ```bash
+  curl -X POST http://localhost:3000/api/pedidos -H "Content-Type: application/json" -d '{"clienteId":1,"itemsText":"2 hamburguesas, 1 gaseosa","total":5000,"tipo":"delivery","plataforma":"rappi"}'
+  ```
+- **Filtrar tareas por área**:
+  ```bash
+  curl http://localhost:3000/api/tareas/area/gestion_pedidos
+  ```
+- **Descontar stock**:
+  ```bash
+  curl -X PUT http://localhost:3000/api/insumos/1/descontar -H "Content-Type: application/json" -d '{"cantidad":5}'
+  ```
+
 ## Contribución
 1. Fork el repositorio.
-2. Crea branch: `git checkout -b feature/nueva-funcionalidad`.
-3. Commit: `git commit -m 'Agregar funcionalidad'`.
-4. Push: `git push origin feature/nueva-funcionalidad`.
-5. Pull Request usando la plantilla en `.github/PULL_REQUEST_TEMPLATE.md`.
+2. Crea branch: `git checkout -b feature/nueva`.
+3. Commit: `git commit -m 'Nueva funcionalidad'`.
+4. Push: `git push origin feature/nueva`.
+5. Pull Request con plantilla en `.github/PULL_REQUEST_TEMPLATE.md`.
+**Bugs**: Usa plantilla en `.github/ISSUE_TEMPLATE.md`.
+**Estándares**: ESLint, comentarios en español, nombres descriptivos.
 
-**Reportar Bugs**:
-- Usa la plantilla en `.github/ISSUE_TEMPLATE.md`.
+## Responsabilidades del Equipo
+- **Juan Dualibe (Project Manager)**: Coordinó el equipo, asignó tareas y monitoreó avances. Colaboró en la configuración de `app.js` y pruebas en Thunder Client.
+- **Nicolás Weibel (Backend Lead / Arquitecto)**: Diseñó la estructura del proyecto (carpetas, rutas, middlewares). Estableció estándares de código con ESLint y nombres claros. Implementó middlewares de validación (`validation.js`).
+- **Germán Rodríguez (Database Manager)**: Estructuró los archivos JSON (`tareas.json`, `empleados.json`, etc.). Desarrolló modelos POO (`Tarea.js`, `Empleado.js`) con métodos CRUD. Documentó el uso de JSON como base de datos.
+- **Rocío Gómez (API Developer)**: Implementó endpoints REST (`tareas.js`, `empleados.js`, etc.). Aseguró que la API cumpliera con estándares REST. Colaboró en pruebas de casos de uso.
+- **Juan Manuel Gasbarro (Tester / QA)**: Diseñó y ejecutó pruebas manuales con Thunder Client. Validó respuestas y manejo de errores. Creó colecciones de pruebas y ejemplos para el README.
 
-**Estándares**:
-- Usa ESLint para formato.
-- Comentarios en español.
-- Nombres descriptivos.
-
-## Equipo de Desarrollo
-- Juan Dualibe  
-- Nicolás Weibel  
-- Rocío Gómez  
-- Juan Manuel Gasbarro  
-- Germán Rodríguez  
+## Bibliografía
+- Documentación Oficial Node.js: https://nodejs.org/docs
+- Express.js Guide: https://expressjs.com/
+- Pug Template Engine: https://pugjs.org/
+- Bootstrap Documentation: https://getbootstrap.com/docs/5.1/
+- Async/Await: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
+- Guía completa para crear un CRUD en Express.js con node.js, Pug y Bootstrap 5 (YouTube): https://www.youtube.com/playlist?list=PLHwb2lmmluvkHEdqUTIjgyQEcszMCaW5Y
