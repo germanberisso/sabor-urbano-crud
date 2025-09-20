@@ -1,0 +1,39 @@
+{
+  "clientes": [
+    {
+      "id": 1,
+      "nombre": "Lucía",
+      "apellido": "Martínez",
+      "email": "lucia.martinez@example.com",
+      "telefono": "11-2233-4455"
+    },
+    {
+      "id": 2,
+      "nombre": "Diego",
+      "apellido": "Suárez",
+      "email": "diego.suarez@example.com",
+      "telefono": "11-3344-5566"
+    },
+    {
+      "id": 3,
+      "nombre": "Paula",
+      "apellido": "Rossi",
+      "email": "paula.rossi@example.com",
+      "telefono": "11-0000-1111"
+    },
+    {
+      "id": 4,
+      "nombre": "Tomás",
+      "apellido": "Giménez",
+      "email": "tomas.gimenez@example.com",
+      "telefono": "11-5566-7788"
+    },
+    {
+      "id": 5,
+      "nombre": "Pedro",
+      "apellido": "Morales",
+      "email": "pedro.morales@example.com",
+      "telefono": "11-6677-8899"
+    }
+  ]
+}

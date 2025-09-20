@@ -6,20 +6,18 @@ import empleadosRouter from './routes/empleados.js'; // Importa el router espec�
 import tareasRouter from './routes/tareas.js'; // Router para tareas
 import pedidosRouter from './routes/pedidos.js'; // Router para pedidos
 import insumosRouter from './routes/insumos.js'; // Router para insumos
-import productosRouter from './routes/productos.js'; // Router para productos
 import Empleado from './models/Empleado.js'; // Modelo de Empleado para interactuar con datos JSON de empleados
 import Tarea from './models/Tarea.js'; // Modelo de Tarea
 import Pedido from './models/Pedido.js'; // Modelo de Pedido
 import Insumo from './models/Insumo.js'; // Modelo de Insumo
-import Producto from './models/Producto.js'; // Modelo de Producto
 import PedidosController from './controllers/pedidosController.js'; // Controlador de Pedidos para lógica específica (ej: renderizar vistas)
+import clientesRoutes from './routes/clientes.js'; // Router para clientes (nota: nombre 'clientesRoutes' en lugar de clientesRouter)
 
 const app = express(); // Crea la instancia principal de la aplicación Express
 const empleadoModel = new Empleado(); // Instancia del modelo Empleado para usar en rutas de vistas (getAll, create, etc.)
 const tareaModel = new Tarea(); // Instancia del modelo Tarea
 const pedidoModel = new Pedido(); // Instancia del modelo Pedido (no usada directamente aquí, pero disponible)
 const insumoModel = new Insumo(); // Instancia del modelo Insumo
-const productoModel = new Producto(); // Instancia del modelo Insumo
 const pedidosController = new PedidosController(); // Instancia del controlador de Pedidos para métodos como renderIndex
 
 // Configuración de Pug
@@ -38,7 +36,7 @@ app.use('/api/empleados', empleadosRouter); // Monta el router de empleados en /
 app.use('/api/tareas', tareasRouter); // Monta router de tareas en /api/tareas
 app.use('/api/pedidos', pedidosRouter); // Monta router de pedidos en /api/pedidos
 app.use('/api/insumos', insumosRouter); // Monta router de insumos en /api/insumos
-app.use('/api/productos', productosRouter); // Monta router de insumos en /api/insumos
+app.use('/api/clientes', clientesRoutes); // Monta router de clientes en /api/clientes
 
 // Rutas para vistas Pug
 app.get('/', (req, res) => res.redirect('/tareas')); // Ruta raíz: redirige a /tareas (página principal de tareas)
@@ -268,69 +266,6 @@ app.post('/insumos/eliminar/:id', async (req, res) => { // Elimina insumo: POST 
         res.redirect('/insumos');
     } catch (error) {
         res.render('error', { error: 'Error al eliminar insumo', code: 500 });
-    }
-});
-
-// PRODUCTOS
-app.get('/productos', async (req, res) => { // Vista productos: GET /productos
-    try {
-        const productos = await productoModel.getAll(); // Obtiene todos
-        res.render('productos/index', { page: 'productos', productos }); // Renderiza tabla
-    } catch (error) {
-        res.render('error', { error: 'Error al cargar productos', code: 500 });
-    }
-});
-
-app.get('/productos/nuevo', (req, res) => { // Nuevo producto: GET /productos/nuevo
-    res.render('productos/nuevo', { page: 'productos' }); // Form vacío
-});
-
-app.post('/productos/nuevo', async (req, res) => { // Crea producto: POST /productos/nuevo
-    try {
-        await productoModel.create(req.body); // Crea
-        res.redirect('/productos');
-    } catch (error) {
-        res.render('error', { error: 'Error al crear producto', code: 500 });
-    }
-});
-
-app.get('/productos/editar/:id', async (req, res) => { // Editar producto: GET /productos/editar/:id
-    try {
-        const { id } = req.params; // ID
-        const producto = await productoModel.getById(id); // Busca
-        if (!producto) {
-            return res.render('error', { error: 'Producto no encontrado', code: 404 });
-        }
-        res.render('productos/editar', { page: 'productos', producto }); // Form prellenado
-    } catch (error) {
-        res.render('error', { error: 'Error al cargar producto', code: 500 });
-    }
-});
-
-app.post('/productos/editar/:id', async (req, res) => { // Actualiza productos: POST /productos/editar/:id
-    try {
-        const { id } = req.params; // ID
-        const producto = await productoModel.getById(id); // Verifica
-        if (!producto) {
-            return res.render('error', { error: 'Producto no encontrado', code: 404 });
-        }
-        await productoModel.update(id, req.body); // Actualiza
-        res.redirect('/productos');
-    } catch (error) {
-        res.render('error', { error: 'Error al actualizar producto', code: 500 });
-    }
-});
-
-app.post('/productos/eliminar/:id', async (req, res) => { // Elimina producto: POST /productos/eliminar/:id
-    try {
-        const { id } = req.params; // ID
-        const resultado = await productoModel.delete(id); // Elimina (retorna true si éxito)
-        if (!resultado) { // No eliminado
-            return res.render('error', { error: 'Producto no encontrado', code: 404 });
-        }
-        res.redirect('/productos');
-    } catch (error) {
-        res.render('error', { error: 'Error al eliminar producto', code: 500 });
     }
 });
 

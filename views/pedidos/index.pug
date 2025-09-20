@@ -38,7 +38,7 @@ block content
                   each pedido in pedidos
                     tr
                       td= pedido.id
-                      td= pedido.nombreCliente
+                      td= pedido.cliente
                       td $#{pedido.total}
                       td
                         span.badge(class= pedido.tipo === 'presencial' ? 'bg-info' : 'bg-primary')= pedido.tipo

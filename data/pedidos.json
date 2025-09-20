@@ -3,39 +3,32 @@
     {
       "id": 1,
       "numeroOrden": "MESA-01",
+      "clienteId": 5,
       "items": [
         {
-          "producto": "Hamburguesa Doble",
+          "producto": "Pizza Muzza",
           "cantidad": 1,
-          "precio": 6100
+          "precio": 3033.3333333333335
         },
         {
-          "producto": "Hamburguesa Simple",
-          "cantidad": 1,
-          "precio": 4000
+          "producto": "Gaseosa Cola 500ml",
+          "cantidad": 2,
+          "precio": 6066.666666666667
         }
       ],
-      "total": 10100,
+      "total": "9100",
       "tipo": "presencial",
       "plataforma": "local",
       "estado": "entregado",
       "fechaCreacion": "2025-09-19T12:05:00.000Z",
       "tiempoEstimado": "20",
       "observaciones": "Mesa cerca de la ventana",
-      "itemsText": [
-        "Pizza Muzza",
-        "Gaseosa Coca Cola 500ml"
-      ],
-      "clienteNombre": null,
-      "clienteTelefono": null,
-      "clienteDireccion": null
+      "cliente": "Pedro Morales"
     },
     {
       "id": 2,
       "numeroOrden": "RAPPI-4521",
-      "nombreCliente": "Diego Suárez",
-      "telefonoCliente": "11-3344-5566",
-      "direccionCliente": "Avenida Rivadavia 1960",
+      "clienteId": 2,
       "items": [
         {
           "producto": "Hamburguesa Doble",
@@ -48,21 +41,19 @@
           "precio": 2000
         }
       ],
-      "total": "18400",
+      "total": 18400,
       "tipo": "delivery",
-      "plataforma": "propia",
+      "plataforma": "rappi",
       "estado": "en_preparacion",
       "fechaCreacion": "2025-09-19T12:20:00.000Z",
-      "tiempoEstimado": "35",
+      "tiempoEstimado": 35,
       "observaciones": "Sin pepinillos",
-      "itemsText": "2 Hamburguesa Doble, 1 Papas Fritas",
-      "clienteNombre": null,
-      "clienteTelefono": null,
-      "clienteDireccion": null
+      "cliente": "Diego Suárez"
     },
     {
       "id": 3,
       "numeroOrden": "MESA-04",
+      "clienteId": 3,
       "items": [
         {
           "producto": "Ensalada César",
@@ -81,14 +72,13 @@
       "estado": "finalizado",
       "fechaCreacion": "2025-09-19T12:40:00.000Z",
       "tiempoEstimado": 15,
-      "observaciones": ""
+      "observaciones": "",
+      "cliente": "Paula Rossi"
     },
     {
       "id": 4,
       "numeroOrden": "PEDIDOSYA-889",
-      "nombreCliente": "Tomás Giménez",
-      "telefonoCliente": "11-5566-7788",
-      "direccionCliente": "Moreno 1263",
+      "clienteId": 4,
       "items": [
         {
           "producto": "Lomito Completo",
@@ -107,14 +97,13 @@
       "estado": "pendiente",
       "fechaCreacion": "2025-09-19T13:05:00.000Z",
       "tiempoEstimado": 30,
-      "observaciones": ""
+      "observaciones": "",
+      "cliente": "Tomás Giménez"
     },
     {
       "id": 5,
       "numeroOrden": "RAPPI-4522",
-      "nombreCliente": "Pedro Morales",
-      "telefonoCliente": "11-6677-8899",
-      "direccionCliente": "Alsina 2306",
+      "clienteId": 1,
       "items": [
         {
           "producto": "Pizza Fugazzeta",
@@ -133,11 +122,13 @@
       "estado": "en_camino",
       "fechaCreacion": "2025-09-19T13:15:00.000Z",
       "tiempoEstimado": 40,
-      "observaciones": "Timbre roto, llamar"
+      "observaciones": "Timbre roto, llamar",
+      "cliente": "Lucía Martínez"
     },
     {
       "id": 6,
       "numeroOrden": "LOCAL-CAJA-15",
+      "clienteId": 2,
       "items": [
         {
           "producto": "Cerveza Rubia",
@@ -156,14 +147,13 @@
       "estado": "listo",
       "fechaCreacion": "2025-09-19T13:25:00.000Z",
       "tiempoEstimado": 10,
-      "observaciones": ""
+      "observaciones": "",
+      "cliente": "Diego Suárez"
     },
     {
       "id": 7,
       "numeroOrden": "PROPIA-DELIV-01",
-      "nombreCliente": "Rocío Rodríguez",
-      "telefonoCliente": "11-7788-1199",
-      "direccionCliente": "Riobamba 352",
+      "clienteId": 3,
       "items": [
         {
           "producto": "Wrap Veggie",
@@ -182,14 +172,13 @@
       "estado": "pendiente",
       "fechaCreacion": "2025-09-19T13:35:00.000Z",
       "tiempoEstimado": 30,
-      "observaciones": ""
+      "observaciones": "",
+      "cliente": "Paula Rossi"
     },
     {
       "id": 8,
       "numeroOrden": "ORD-008",
-      "nombreCliente": "María Gómez",
-      "telefonoCliente": "11-1122-3344",
-      "direccionCliente": "Triunvirato 1210",
+      "clienteId": 1,
       "items": [
         {
           "producto": "Tartas de Manzana",
@@ -203,180 +192,8 @@
       "estado": "en_preparacion",
       "fechaCreacion": "2025-09-20T03:11:45.620Z",
       "tiempoEstimado": "30",
-      "observaciones": ""
-    },
-    {
-      "id": 9,
-      "numeroOrden": "ORD-009",
-      "items": [],
-      "total": "10000",
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T14:03:59.136Z",
-      "tiempoEstimado": "30",
-      "observaciones": ""
-    },
-    {
-      "id": 10,
-      "numeroOrden": "ORD-010",
-      "items": [],
-      "total": 5000,
-      "tipo": "delivery",
-      "plataforma": "rappi",
-      "estado": "en_preparacion",
-      "fechaCreacion": "2025-09-20T15:12:51.787Z",
-      "tiempoEstimado": 30,
       "observaciones": "",
-      "cliente": null
-    },
-    {
-      "id": 11,
-      "numeroOrden": "ORD-011",
-      "items": [],
-      "total": 5000,
-      "tipo": "delivery",
-      "plataforma": "rappi",
-      "estado": "en_preparacion",
-      "fechaCreacion": "2025-09-20T15:17:16.527Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": "Camila Sánchez",
-      "telefonoCliente": 1123456789,
-      "direccionCliente": "Montes de Oca 3245"
-    },
-    {
-      "id": 12,
-      "numeroOrden": "ORD-012",
-      "items": [
-        {
-          "producto": "Hamburguesa simple con queso",
-          "precio": "5000",
-          "cantidad": 3
-        }
-      ],
-      "total": 15000,
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T20:02:11.482Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": null,
-      "telefonoCliente": null,
-      "direccionCliente": null
-    },
-    {
-      "id": 13,
-      "numeroOrden": "ORD-013",
-      "items": [
-        {
-          "producto": "Hamburguesa simple con queso",
-          "precio": "5000",
-          "cantidad": 1
-        },
-        {
-          "producto": "Hamburguesa triple con cheddar",
-          "precio": "9500",
-          "cantidad": 3
-        }
-      ],
-      "total": 33500,
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T20:03:14.621Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": null,
-      "telefonoCliente": null,
-      "direccionCliente": null
-    },
-    {
-      "id": 14,
-      "numeroOrden": "ORD-014",
-      "items": [
-        {
-          "producto": "Hamburguesa simple con queso",
-          "precio": "5000",
-          "cantidad": 1
-        }
-      ],
-      "total": 5000,
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T20:11:12.324Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": null,
-      "telefonoCliente": null,
-      "direccionCliente": null
-    },
-    {
-      "id": 15,
-      "numeroOrden": "ORD-015",
-      "items": [
-        {
-          "producto": "Hamburguesa simple con queso",
-          "precio": "5000",
-          "cantidad": 1
-        }
-      ],
-      "total": 5000,
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T20:11:38.541Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": null,
-      "telefonoCliente": null,
-      "direccionCliente": null
-    },
-    {
-      "id": 16,
-      "numeroOrden": "ORD-016",
-      "items": [
-        {
-          "id": 1,
-          "producto": "Hamburguesa simple con queso",
-          "precio": "5000",
-          "cantidad": 1
-        }
-      ],
-      "total": 5000,
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T20:12:25.551Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": null,
-      "telefonoCliente": null,
-      "direccionCliente": null
-    },
-    {
-      "id": 17,
-      "numeroOrden": "ORD-017",
-      "items": [
-        {
-          "id": 1,
-          "producto": "Hamburguesa simple con queso",
-          "precio": 5000,
-          "cantidad": 1
-        }
-      ],
-      "total": 5000,
-      "tipo": "presencial",
-      "plataforma": "local",
-      "estado": "pendiente",
-      "fechaCreacion": "2025-09-20T20:13:31.392Z",
-      "tiempoEstimado": 30,
-      "observaciones": "",
-      "nombreCliente": null,
-      "telefonoCliente": null,
-      "direccionCliente": null
+      "cliente": "Lucía Martínez"
     }
   ]
 }

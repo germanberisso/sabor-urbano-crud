@@ -61,7 +61,7 @@ router.get('/plataforma/:plataforma', (req, res) => pedidosController.getByPlata
 router.get('/:id', (req, res) => pedidosController.getById(req, res)); // GET /pedidos/:id: uno
 
 router.post('/', 
-    ValidationMiddleware.validarCamposRequeridos(['itemsText', 'total', 'tipo', 'plataforma', 'estado']),
+    ValidationMiddleware.validarCamposRequeridos(['clienteId', 'itemsText', 'total', 'tipo', 'plataforma', 'estado']),
     validarPedido,
     (req, res) => pedidosController.create(req, res)
 );
