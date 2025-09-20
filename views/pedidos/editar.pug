@@ -13,59 +13,72 @@ block content
     .col-lg-8
       .card
         .card-body
-          - var nombreCliente = pedido.nombreCliente
-          - var telefonoCliente = pedido.telefonoCliente
-          - var direccionCliente = pedido.direccionCliente
+          // ------------------- CAMPOS INICIALES -------------------
+          - var nombreCliente = pedido.nombreCliente || (pedido.cliente && pedido.cliente.nombre) || ''
+          - var telefonoCliente = pedido.telefonoCliente || (pedido.cliente && pedido.cliente.telefono) || ''
+          - var direccionCliente = pedido.direccionCliente || (pedido.cliente && pedido.cliente.direccion) || ''
 
-          //- IMPORTANTE: agregamos data-pedido-id para usar en el script del cliente
+          // data-pedido-id para usar en el submit
           form#pedidoForm(data-pedido-id=pedido.id)
-            // Campos cliente
-            .mb-3(id="clienteFields" style=(pedido.tipo !== 'delivery' ? 'display:none;' : ''))
-              label.form-label(for="nombreCliente") Nombre del Cliente
-              input.form-control(type="text", id="nombreCliente", name="nombreCliente", value=nombreCliente)
-              label.form-label(for="telefonoCliente") Teléfono
-              input.form-control(type="text", id="telefonoCliente", name="telefonoCliente", value=telefonoCliente)
-              label.form-label(for="direccionCliente") Dirección
-              input.form-control(type="text", id="direccionCliente", name="direccionCliente", value=direccionCliente)
-
-            // Productos
-            .mb-3
-            label.form-label Productos
-            - var itemsPedido = (pedido.items || []).filter(i => i) // eliminamos null/undefined
-
-            each producto in productos
-                - var seleccionado = false
-                - var cantidadProducto = 1
-                - for (var i = 0; i < itemsPedido.length; i++)
-                    - if (itemsPedido[i] && itemsPedido[i].id === producto.id)
-                        - seleccionado = true
-                        - cantidadProducto = itemsPedido[i].cantidad
-                .form-check
-                    input.form-check-input(type="checkbox", name=`items[${producto.id}][seleccionado]`, value="true", checked=seleccionado)
-                    label.form-check-label= producto.nombre + ' $' + producto.precio
-                    input.form-control(type="number", min="1", name=`items[${producto.id}][cantidad]`, value=cantidadProducto, style="width:80px; display:inline-block; margin-left:10px;")
-
-            .mb-3
-              label.form-label(for="total") Total
-              input.form-control(type="number", id="total", name="total", value=pedido.total, required)
-
-            .mb-3
-              label.form-label(for="tipo") Tipo
-              select.form-control(id="tipo", name="tipo", required)
+            // ------------------- TIPO DE PEDIDO -------------------
+            .form-group.mb-3
+              label(for="tipo") Tipo de Pedido
+              select#tipo.form-control(name="tipo" required)
                 option(value="presencial", selected=(pedido.tipo==='presencial')) Presencial
                 option(value="delivery", selected=(pedido.tipo==='delivery')) Delivery
 
-            .mb-3
-              label.form-label(for="plataforma") Plataforma
-              select.form-control(id="plataforma", name="plataforma", required)
+            // ------------------- PLATAFORMA -------------------
+            .form-group.mb-3
+              label(for="plataforma") Plataforma
+              select#plataforma.form-control(name="plataforma" required)
+                option(value="propia", selected=(pedido.plataforma==='propia')) Propia
                 option(value="rappi", selected=(pedido.plataforma==='rappi')) Rappi
                 option(value="pedidosya", selected=(pedido.plataforma==='pedidosya')) PedidosYa
-                option(value="propia", selected=(pedido.plataforma==='propia')) Propia
                 option(value="local", selected=(pedido.plataforma==='local')) Local
 
-            .mb-3
-              label.form-label(for="estado") Estado
-              select.form-control(id="estado", name="estado", required)
+            // ------------------- CAMPOS DELIVERY -------------------
+            // Se muestran solo si tipo = delivery
+            div#deliveryFields(style=(pedido.tipo==='delivery' ? 'block' : 'none'))
+              .form-group.mb-3
+                label(for="nombreCliente") Nombre Cliente
+                input.form-control(type="text" name="nombreCliente" value=nombreCliente)
+              .form-group.mb-3
+                label(for="telefonoCliente") Teléfono Cliente
+                input.form-control(type="text" name="telefonoCliente" value=telefonoCliente)
+              .form-group.mb-3
+                label(for="direccionCliente") Dirección Cliente
+                input.form-control(type="text" name="direccionCliente" value=direccionCliente)
+
+            // ------------------- ITEMS DEL PEDIDO -------------------
+            .form-group.mb-3
+              label Items del Pedido
+              - var itemsPedido = Array.isArray(pedido.items) ? pedido.items : []
+              each producto in productos
+                - var match = itemsPedido.find(i => i && i.id === producto.id)
+                - var seleccionado = !!match
+                - var cantidad = match ? match.cantidad : 1
+                .mb-2.d-flex.align-items-center
+                  input.form-check-input.item-checkbox(
+                    type="checkbox"
+                    data-id=producto.id
+                    data-precio=producto.precio
+                    id=`producto${producto.id}`
+                    checked=seleccionado
+                  )
+                  label.form-check-label.ms-2(for=`producto${producto.id}`) #{producto.nombre} - $#{producto.precio}
+                  input.form-control.item-cantidad.ms-2(
+                    type="number"
+                    min="1"
+                    value=cantidad
+                    data-id=producto.id
+                    style="width:80px;"
+                    disabled=!seleccionado
+                  )
+
+            // ------------------- CAMPOS EXTRA (si ya los usás en editar) -------------------
+            .form-group.mb-3
+              label(for="estado") Estado
+              select#estado.form-control(name="estado" required)
                 option(value="pendiente", selected=(pedido.estado==='pendiente')) Pendiente
                 option(value="en_preparacion", selected=(pedido.estado==='en_preparacion')) En Preparación
                 option(value="listo", selected=(pedido.estado==='listo')) Listo
@@ -73,116 +86,156 @@ block content
                 option(value="entregado", selected=(pedido.estado==='entregado')) Entregado
                 option(value="finalizado", selected=(pedido.estado==='finalizado')) Finalizado
 
-            .mb-3
-              label.form-label(for="tiempoEstimado") Tiempo Estimado (minutos)
-              input.form-control(type="number", id="tiempoEstimado", name="tiempoEstimado", value=pedido.tiempoEstimado || '')
+            .form-group.mb-3
+              label(for="tiempoEstimado") Tiempo Estimado (minutos)
+              input#tiempoEstimado.form-control(type="number" name="tiempoEstimado" value=pedido.tiempoEstimado || '')
 
-            .mb-3
-              label.form-label(for="observaciones") Observaciones
-              textarea.form-control(id="observaciones", name="observaciones", rows="4")= pedido.observaciones || ''
+            .form-group.mb-3
+              label(for="observaciones") Observaciones
+              textarea#observaciones.form-control(name="observaciones" rows="3")= pedido.observaciones || ''
 
-            .d-grid
-              button.btn.btn-info(type="submit")
-                i.fas.fa-save.me-2
-                | Actualizar Pedido
+            // ------------------- TOTAL -------------------
+            .form-group
+              label(for="total") Total
+              input#total.form-control(type="number" name="total" readonly value=pedido.total || 0)
+
+            button.btn.btn-info.mt-3(type="submit")
+              i.fas.fa-save.me-2
+              | Actualizar Pedido
 
       a.btn.btn-outline-secondary.mt-3(href="/pedidos")
         i.fas.fa-arrow-left.me-2
         | Volver
 
-  //- Script cliente: arma payload JSON con items anidados y usa data-pedido-id
+  // ------------------- SCRIPT -------------------
   script.
     (function () {
       const pedidoForm = document.getElementById('pedidoForm');
-      const tipoSelect = document.getElementById('tipo');
-      const clienteFields = document.getElementById('clienteFields');
       const pedidoId = pedidoForm?.dataset?.pedidoId;
 
-      function ajustarCampos() {
-        clienteFields.style.display = tipoSelect.value === 'delivery' ? 'block' : 'none';
-      }
-      ajustarCampos();
-      tipoSelect.addEventListener('change', ajustarCampos);
+      const tipoSelect = document.getElementById('tipo');
+      const plataformaSelect = document.getElementById('plataforma');
+      const deliveryFields = document.getElementById('deliveryFields');
 
-      // Construye { [idProducto]: { seleccionado: true, cantidad: n } } SOLO para checkeados
-      function buildItemsPayload() {
-        const out = {};
-        const checks = pedidoForm.querySelectorAll('input.form-check-input[name^="items["][name$="[seleccionado]"]');
-        checks.forEach((chk) => {
-          const m = chk.name.match(/^items\[(\d+)\]\[seleccionado\]$/);
-          if (!m) return;
-          const id = m[1];
-          const qtyInput = pedidoForm.querySelector(`input[name="items[${id}][cantidad]"]`);
-          const cantidad = Number(qtyInput?.value || 1);
-          if (chk.checked) {
-            out[id] = { seleccionado: true, cantidad: isNaN(cantidad) ? 1 : Math.max(1, cantidad) };
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      const totalInput = document.getElementById('total');
+
+      function actualizarFormulario() {
+        const tipo = tipoSelect.value;
+        const opciones = plataformaSelect.options;
+
+        for (let i = 0; i < opciones.length; i++) {
+          const opcion = opciones[i];
+          if (tipo === 'presencial') {
+            opcion.disabled = opcion.value !== 'local';
+            if (opcion.value === 'local') opcion.selected = true;
+          } else {
+            opcion.disabled = opcion.value === 'local';
+            // si quedó "local" seleccionado al pasar a delivery, forzamos "propia"
+            if (opcion.value === 'propia' && !opcion.disabled && plataformaSelect.value === 'local') {
+              opcion.selected = true;
+            }
+          }
+        }
+        deliveryFields.style.display = tipo === 'delivery' ? 'block' : 'none';
+      }
+
+      tipoSelect.addEventListener('change', actualizarFormulario);
+      actualizarFormulario();
+
+      function cantidadInputFor(id) {
+        return pedidoForm.querySelector(`.item-cantidad[data-id="${id}"]`);
+      }
+
+      function calcularTotal() {
+        let total = 0;
+        checkboxes.forEach(cb => {
+          const id = cb.dataset.id;
+          const precio = parseFloat(cb.dataset.precio) || 0;
+          const qtyInput = cantidadInputFor(id);
+          if (cb.checked) {
+            const cant = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+            total += cant * precio;
           }
         });
-        return out;
+        totalInput.value = total;
       }
 
+      // listeners de checkboxes/cantidades
+      checkboxes.forEach(cb => {
+        const id = cb.dataset.id;
+        const qtyInput = cantidadInputFor(id);
+        cb.addEventListener('change', () => {
+          qtyInput.disabled = !cb.checked;
+          if (!cb.checked) qtyInput.value = 1;
+          calcularTotal();
+        });
+        qtyInput?.addEventListener('input', calcularTotal);
+      });
+
+      // cálculo inicial (con lo preseleccionado)
+      calcularTotal();
+
+      // Submit => POST a /pedidos/editar/:id (igual estilo que "nuevo")
       pedidoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const fd = new FormData(pedidoForm);
-        const tipo = fd.get('tipo');
-        const plataforma = fd.get('plataforma');
-        const estado = fd.get('estado');
-        const tiempoEstimado = fd.get('tiempoEstimado');
-        const observaciones = fd.get('observaciones') || '';
+        // armar items como JSON
+        const items = {};
+        checkboxes.forEach(cb => {
+          if (cb.checked) {
+            const id = cb.dataset.id;
+            const qty = Math.max(1, parseInt(cantidadInputFor(id).value, 10) || 1);
+            items[id] = { seleccionado: true, cantidad: qty };
+          }
+        });
 
-        // Cliente (solo si delivery)
-        let nombreCliente, telefonoCliente, direccionCliente;
-        if (tipo === 'delivery') {
-          nombreCliente = (fd.get('nombreCliente') || '').trim();
-          telefonoCliente = (fd.get('telefonoCliente') || '').trim();
-          direccionCliente = (fd.get('direccionCliente') || '').trim();
+        if (Object.keys(items).length === 0) {
+          alert('Debe seleccionar al menos un producto');
+          return;
         }
 
-        // Items anidados como espera el backend
-        const items = buildItemsPayload();
-
-        // Validaciones mínimas
-        if (!pedidoId) return alert('No se encontró el ID del pedido.');
-        if (!tipo || !plataforma) return alert('Completá Tipo y Plataforma.');
-        if (Object.keys(items).length === 0) return alert('Debes seleccionar al menos un producto.');
-        if (tipo === 'delivery' && (!nombreCliente || !telefonoCliente || !direccionCliente)) {
-          return alert('Faltan datos del cliente para delivery.');
-        }
-
-        // Payload exacto para PedidosController.update
-        const payload = {
+        // campos base
+        const data = {
+          tipo: tipoSelect.value,
+          plataforma: plataformaSelect.value,
           items,
-          tipo,
-          plataforma,
-          estado,
-          tiempoEstimado: tiempoEstimado ? Number(tiempoEstimado) : undefined,
-          observaciones
+          // estos campos extra están en el form de editar
+          estado: document.getElementById('estado')?.value || undefined,
+          tiempoEstimado: (() => {
+            const v = document.getElementById('tiempoEstimado')?.value;
+            return v ? Number(v) : undefined;
+          })(),
+          observaciones: document.getElementById('observaciones')?.value || ''
         };
-        if (tipo === 'delivery') {
-          payload.nombreCliente = nombreCliente;
-          payload.telefonoCliente = telefonoCliente;
-          payload.direccionCliente = direccionCliente;
+
+        // datos de cliente si delivery
+        if (data.tipo === 'delivery') {
+          data.nombreCliente = pedidoForm.nombreCliente?.value || '';
+          data.telefonoCliente = pedidoForm.telefonoCliente?.value || '';
+          data.direccionCliente = pedidoForm.direccionCliente?.value || '';
         }
 
-        console.log('Payload JSON a enviar:', payload);
+        // (opcional) total solo display; el backend recalcula, pero lo mandamos por si lo usás
+        const t = parseFloat(totalInput.value);
+        if (!Number.isNaN(t)) data.total = t;
 
         try {
-          const resp = await fetch(`/api/pedidos/${pedidoId}`, {
-            method: 'PUT',
+          const res = await fetch(`/pedidos/editar/${pedidoId}`, {
+            method: 'POST', // paralelo a "nuevo" que usa POST
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(data)
           });
-          const result = await resp.json();
-          if (result?.success) {
+          const result = await res.json();
+          if (result.success) {
             alert('Pedido actualizado exitosamente');
             window.location.href = '/pedidos';
           } else {
-            alert(`Error: ${result?.message || 'No se pudo actualizar'}`);
+            alert(`Error: ${result.message}`);
           }
         } catch (err) {
-          console.error('Error al actualizar pedido:', err);
-          alert('Error al actualizar pedido');
+          console.error(err);
+          alert('Error al actualizar el pedido');
         }
       });
     })();
