@@ -1,179 +1,172 @@
-// Importa módulos para manejo de archivos y rutas
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs'; // Promesas para I/O archivos
+import { join, dirname } from 'path'; // Manejo de rutas
+import { fileURLToPath } from 'url'; // Ruta actual
+import Cliente from './Cliente.js'; // Importa modelo Cliente para consultas
 
-// Clase para gestionar operaciones CRUD de pedidos usando JSON
 class Pedido {
-    // Inicializa la ruta al archivo pedidos.json
-    constructor() {
-        this.filePath = path.join(__dirname, '../data/pedidos.json');
+    constructor() { // Constructor inicializa ruta y modelo cliente
+        const __filename = fileURLToPath(import.meta.url); // Archivo actual
+        const __dirname = dirname(__filename); // Directorio
+        this.filePath = join(__dirname, '../data/pedidos.json'); // Ruta JSON pedidos
+        this.clienteModel = new Cliente(); // Instancia para acceder a clientes
     }
 
-    // Lee todos los pedidos desde el archivo JSON
-    async getAll() {
+    async getAll() { // Obtiene todos los pedidos, mapeando cliente a string (nombre completo)
         try {
-            const data = await fs.readFile(this.filePath, 'utf8');
-            const json = JSON.parse(data);
-            return json.pedidos || [];
+            const data = await fs.readFile(this.filePath, 'utf8'); // Lee JSON
+            const json = JSON.parse(data); // Parsea
+            const pedidos = json.pedidos || []; // Array o vacío
+            const clientes = await this.clienteModel.getAll(); // Obtiene todos clientes
+
+            // Mapear pedidos para incluir cliente como string (nombre completo)
+            return pedidos.map(pedido => ({ // Para cada pedido, crea objeto con cliente como string
+                ...pedido, // Copia propiedades originales
+                cliente: pedido.clienteId // Si tiene clienteId
+                    ? (clientes.find(c => c.id === parseInt(pedido.clienteId)) // Busca cliente
+                        ? `${clientes.find(c => c.id === parseInt(pedido.clienteId)).nombre} ${clientes.find(c => c.id === parseInt(pedido.clienteId)).apellido}` // Nombre completo
+                        : 'Cliente desconocido') // Si no, desconocido
+                    : (typeof pedido.cliente === 'string' // Maneja casos viejos con cliente string
+                        ? pedido.cliente
+                        : 'Cliente no especificado') // O no especificado
+            }));
         } catch (error) {
-            console.error('Error al leer pedidos:', error);
-            return [];
+            console.error('Error al leer pedidos:', error); // Log
+            return []; // Vacío
         }
     }
 
-    // Obtiene un pedido por su ID
-    async getById(id) {
+    async getById(id) { // Obtiene pedido por ID, usando getAll para mapeo cliente
         try {
-            const pedidos = await this.getAll();
-            return pedidos.find(pedido => pedido.id === parseInt(id));
+            const pedidos = await this.getAll(); // Reusamos getAll para incluir cliente como string
+            return pedidos.find(pedido => pedido.id === parseInt(id)) || null; // Encuentra o null
         } catch (error) {
-            console.error('Error al obtener pedido por ID:', error);
+            console.error('Error al obtener pedido por ID:', error); // Log
             return null;
         }
     }
 
-    // Filtra pedidos por tipo (presencial o delivery)
-    async getByTipo(tipo) {
+    async getByTipo(tipo) { // Filtra pedidos por tipo (presencial/delivery)
         try {
-            const pedidos = await this.getAll();
-            return pedidos.filter(pedido => pedido.tipo === tipo);
+            const pedidos = await this.getAll(); // Todos mapeados
+            return pedidos.filter(pedido => pedido.tipo === tipo); // Filtra
         } catch (error) {
-            console.error('Error al filtrar por tipo:', error);
+            console.error('Error al filtrar por tipo:', error); // Log
             return [];
         }
     }
 
-    // Filtra pedidos por plataforma (rappi, pedidosya, propia, local)
-    async getByPlataforma(plataforma) {
+    async getByPlataforma(plataforma) { // Filtra por plataforma (rappi, etc.)
         try {
-            const pedidos = await this.getAll();
-            return pedidos.filter(pedido => pedido.plataforma === plataforma);
+            const pedidos = await this.getAll(); // Todos
+            return pedidos.filter(pedido => pedido.plataforma === plataforma); // Filtra
         } catch (error) {
-            console.error('Error al filtrar por plataforma:', error);
+            console.error('Error al filtrar por plataforma:', error); // Log
             return [];
         }
     }
 
-    // Filtra pedidos por estado (e.g., pendiente, en_preparacion)
-    async getByEstado(estado) {
+    async getByEstado(estado) { // Filtra por estado (pendiente, etc.)
         try {
-            const pedidos = await this.getAll();
-            return pedidos.filter(pedido => pedido.estado === estado);
+            const pedidos = await this.getAll(); // Todos
+            return pedidos.filter(pedido => pedido.estado === estado); // Filtra
         } catch (error) {
-            console.error('Error al filtrar por estado:', error);
+            console.error('Error al filtrar por estado:', error); // Log
             return [];
         }
     }
 
-    // Crea un nuevo pedido con valores por defecto
-    async create(nuevoPedido) {
+    async create(nuevoPedido) { // Crea nuevo pedido
         try {
-            const pedidos = await this.getAll();
-            // Genera un nuevo ID incremental
-            const nuevoId = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id)) + 1 : 1;
-            // Crea el objeto pedido con valores por defecto
-            const pedido = {
+            // Leemos el JSON crudo para evitar el mapeo de cliente
+            const data = await fs.readFile(this.filePath, 'utf8'); // Lee crudo
+            const pedidos = JSON.parse(data).pedidos || []; // Array crudo
+            const nuevoId = pedidos.length > 0 ? Math.max(...pedidos.map(p => p.id)) + 1 : 1; // Nuevo ID
+            const pedido = { // Objeto crudo (usa clienteId)
                 id: nuevoId,
-                numeroOrden: nuevoPedido.numeroOrden || `ORD-${nuevoId.toString().padStart(3, '0')}`,
-                cliente: nuevoPedido.cliente,
-                items: nuevoPedido.items,
-                total: nuevoPedido.total,
-                tipo: nuevoPedido.tipo, // presencial o delivery
-                plataforma: nuevoPedido.plataforma, // rappi, pedidosya, propia, local
-                estado: nuevoPedido.estado || 'pendiente',
-                fechaCreacion: new Date().toISOString(),
-                tiempoEstimado: nuevoPedido.tiempoEstimado || 30,
-                observaciones: nuevoPedido.observaciones || ''
+                numeroOrden: nuevoPedido.numeroOrden || `ORD-${nuevoId.toString().padStart(3, '0')}`, // Número orden formateado
+                clienteId: parseInt(nuevoPedido.clienteId), // ID cliente como entero
+                items: nuevoPedido.items, // Items del pedido
+                total: nuevoPedido.total, // Total
+                tipo: nuevoPedido.tipo, // Tipo
+                plataforma: nuevoPedido.plataforma, // Plataforma
+                estado: nuevoPedido.estado || 'pendiente', // Estado, pendiente por defecto
+                fechaCreacion: new Date().toISOString(), // Fecha creación
+                tiempoEstimado: nuevoPedido.tiempoEstimado || 30, // Tiempo estimado, 30 min default
+                observaciones: nuevoPedido.observaciones || '' // Observaciones, vacío default
             };
-            pedidos.push(pedido);
-            // Guarda los cambios en el archivo JSON
-            await this.saveAll(pedidos);
-            return pedido;
-        } catch (error) {
-            console.error('Error al crear pedido:', error);
-            throw error;
-        }
-    }
+            pedidos.push(pedido); // Agrega
+            await this.saveAll(pedidos); // Guarda crudo
 
-    // Actualiza un pedido existente
-    async update(id, datosActualizados) {
-        try {
-            const pedidos = await this.getAll();
-            const index = pedidos.findIndex(pedido => pedido.id === parseInt(id));
-            // Verifica si el pedido existe
-            if (index === -1) {
-                throw new Error('Pedido no encontrado');
-            }
-            // Actualiza los datos del pedido
-            pedidos[index] = { ...pedidos[index], ...datosActualizados };
-            await this.saveAll(pedidos);
-            return pedidos[index];
-        } catch (error) {
-            console.error('Error al actualizar pedido:', error);
-            throw error;
-        }
-    }
-
-    // Elimina un pedido
-    async delete(id) {
-        try {
-            const pedidos = await this.getAll();
-            const pedidosFiltrados = pedidos.filter(pedido => pedido.id !== parseInt(id));
-            // Verifica si el pedido existía
-            if (pedidos.length === pedidosFiltrados.length) {
-                throw new Error('Pedido no encontrado');
-            }
-            // Guarda los cambios en el archivo JSON
-            await this.saveAll(pedidosFiltrados);
-            return true;
-        } catch (error) {
-            console.error('Error al eliminar pedido:', error);
-            throw error;
-        }
-    }
-
-    // Calcula estadísticas de pedidos por tipo, plataforma y estado
-    async getEstadisticas() {
-        try {
-            const pedidos = await this.getAll();
-            // Genera estadísticas agrupadas
-            return {
-                total: pedidos.length,
-                porTipo: {
-                    presencial: pedidos.filter(p => p.tipo === 'presencial').length,
-                    delivery: pedidos.filter(p => p.tipo === 'delivery').length
-                },
-                porPlataforma: {
-                    local: pedidos.filter(p => p.plataforma === 'local').length,
-                    propia: pedidos.filter(p => p.plataforma === 'propia').length,
-                    rappi: pedidos.filter(p => p.plataforma === 'rappi').length,
-                    pedidosya: pedidos.filter(p => p.plataforma === 'pedidosya').length
-                },
-                porEstado: {
-                    pendiente: pedidos.filter(p => p.estado === 'pendiente').length,
-                    en_preparacion: pedidos.filter(p => p.estado === 'en_preparacion').length,
-                    listo: pedidos.filter(p => p.estado === 'listo').length,
-                    en_camino: pedidos.filter(p => p.estado === 'en_camino').length,
-                    entregado: pedidos.filter(p => p.estado === 'entregado').length,
-                    finalizado: pedidos.filter(p => p.estado === 'finalizado').length
-                }
+            // Retornamos con cliente como string para la vista
+            const cliente = await this.clienteModel.getById(pedido.clienteId); // Obtiene cliente
+            return { // Retorna mapeado
+                ...pedido,
+                cliente: cliente ? `${cliente.nombre} ${cliente.apellido}` : 'Cliente desconocido'
             };
         } catch (error) {
-            console.error('Error al obtener estadísticas de pedidos:', error);
-            return {};
+            console.error('Error al crear pedido:', error); // Log
+            throw error;
         }
     }
 
-    // Guarda todos los pedidos en el archivo JSON
-    async saveAll(pedidos) {
+    async update(id, datosActualizados) { // Actualiza pedido por ID
         try {
-            const data = JSON.stringify({ pedidos }, null, 2);
-            await fs.writeFile(this.filePath, data, 'utf8');
+            // Leemos el JSON crudo
+            const data = await fs.readFile(this.filePath, 'utf8'); // Crudo
+            const pedidos = JSON.parse(data).pedidos || []; // Array
+            const index = pedidos.findIndex(pedido => pedido.id === parseInt(id)); // Índice
+            if (index === -1) { // No encontrado
+                throw new Error('Pedido no encontrado');
+            }
+            // Parseamos clienteId si viene
+            if (datosActualizados.clienteId) { // Si nuevo clienteId
+                datosActualizados.clienteId = parseInt(datosActualizados.clienteId); // A entero
+            }
+            // Eliminamos cliente si existe, ya que usamos clienteId
+            delete datosActualizados.cliente; // Limpia propiedad cliente
+            pedidos[index] = { ...pedidos[index], ...datosActualizados }; // Fusiona
+            await this.saveAll(pedidos); // Guarda crudo
+
+            // Retornamos con cliente como string
+            const cliente = await this.clienteModel.getById(pedidos[index].clienteId); // Obtiene cliente
+            return { // Mapea
+                ...pedidos[index],
+                cliente: cliente ? `${cliente.nombre} ${cliente.apellido}` : 'Cliente desconocido'
+            };
         } catch (error) {
-            console.error('Error al guardar pedidos:', error);
+            console.error('Error al actualizar pedido:', error); // Log
+            throw error;
+        }
+    }
+
+    async delete(id) { // Elimina pedido por ID
+        try {
+            const pedidos = await this.getAll(); // Todos mapeados (pero usamos para contar)
+            const pedidosFiltrados = pedidos.filter(pedido => pedido.id !== parseInt(id)); // Filtra
+            if (pedidos.length === pedidosFiltrados.length) { // No se eliminó
+                throw new Error('Pedido no encontrado');
+            }
+            // Guardamos el JSON crudo (sin cliente mapeado)
+            await this.saveAll(pedidosFiltrados.map(p => ({ // Mapea a crudo, extrayendo clienteId
+                ...p,
+                clienteId: p.clienteId || (typeof p.cliente === 'string' ? undefined : p.cliente?.id) // Maneja casos viejos
+            })));
+            return true; // Confirma
+        } catch (error) {
+            console.error('Error al eliminar pedido:', error); // Log
+            throw error;
+        }
+    }
+
+    async saveAll(pedidos) { // Guarda array crudo en JSON
+        try {
+            const data = JSON.stringify({ pedidos }, null, 2); // Formatea
+            await fs.writeFile(this.filePath, data, 'utf8'); // Escribe
+        } catch (error) {
+            console.error('Error al guardar pedidos:', error); // Log
             throw error;
         }
     }
 }
 
-module.exports = Pedido;
+export default Pedido; // Exporta

@@ -13,42 +13,6 @@ block content
           i.fas.fa-user-plus.me-2
           | Nuevo Empleado
 
-  .row.mb-4
-    .col-12
-      .card
-        .card-header.bg-success.text-white
-          h5.mb-0
-            i.fas.fa-filter.me-2
-            | Filtros por Rol y Área
-        .card-body
-          .row.g-2.mb-3
-            .col-md
-              h6 Por Rol
-            .col-md-2
-              a.btn.btn-outline-danger.btn-sm.w-100(href="/api/empleados/rol/administrador", target="_blank") Admin
-            .col-md-2
-              a.btn.btn-outline-primary.btn-sm.w-100(href="/api/empleados/rol/cocinero", target="_blank") Cocinero
-            .col-md-2
-              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/empleados/rol/repartidor", target="_blank") Repartidor
-            .col-md-2
-              a.btn.btn-outline-info.btn-sm.w-100(href="/api/empleados/rol/mozo", target="_blank") Mozo
-            .col-md-2
-              a.btn.btn-outline-secondary.btn-sm.w-100(href="/api/empleados/rol/encargado_stock", target="_blank") Stock
-          
-          .row.g-2
-            .col-md
-              h6 Por Área
-            .col-md-2
-              a.btn.btn-outline-primary.btn-sm.w-100(href="/api/empleados/area/cocina", target="_blank") Cocina
-            .col-md-2
-              a.btn.btn-outline-warning.btn-sm.w-100(href="/api/empleados/area/reparto", target="_blank") Reparto
-            .col-md-2
-              a.btn.btn-outline-info.btn-sm.w-100(href="/api/empleados/area/salon", target="_blank") Salón
-            .col-md-2
-              a.btn.btn-outline-success.btn-sm.w-100(href="/api/empleados/area/inventario", target="_blank") Inventario
-            .col-md-2
-              a.btn.btn-outline-dark.btn-sm.w-100(href="/api/empleados/area/administracion", target="_blank") Admin
-
   if empleados && empleados.length > 0
     .row
       .col-12
@@ -68,11 +32,10 @@ block content
                     th Rol
                     th Área
                     th Fecha Ingreso
-                    th Estado
                     th Acciones
                 tbody
                   each emp in empleados
-                    tr(class= emp.activo ? '' : 'table-secondary')
+                    tr
                       td= emp.id
                       td
                         strong #{emp.nombre} #{emp.apellido}
@@ -82,48 +45,39 @@ block content
                           small= emp.email
                         div
                           i.fas.fa-phone.me-1
-                          small= emp.telefono
+                          small= emp.telefono || 'Sin teléfono'
                       td
-                        if emp.rol === 'administrador'
-                          span.badge.bg-danger Administrador
-                        else if emp.rol === 'cocinero'
-                          span.badge.bg-primary Cocinero
-                        else if emp.rol === 'repartidor'
-                          span.badge.bg-warning Repartidor
-                        else if emp.rol === 'mozo'
-                          span.badge.bg-info Mozo
-                        else if emp.rol === 'encargado_stock'
-                          span.badge.bg-secondary Enc. Stock
+                        span.badge(class= emp.rol === 'administrador' ? 'bg-danger' : emp.rol === 'cocinero' ? 'bg-primary' : emp.rol === 'repartidor' ? 'bg-warning' : emp.rol === 'mozo' ? 'bg-info' : 'bg-secondary')= emp.rol
                       td
-                        if emp.area === 'cocina'
-                          span.badge.bg-primary Cocina
-                        else if emp.area === 'reparto'
-                          span.badge.bg-warning Reparto
-                        else if emp.area === 'salon'
-                          span.badge.bg-info Salón
-                        else if emp.area === 'inventario'
-                          span.badge.bg-success Inventario
-                        else if emp.area === 'administracion'
-                          span.badge.bg-dark Administración
+                        span.badge(class= emp.area === 'cocina' ? 'bg-primary' : emp.area === 'reparto' ? 'bg-warning' : emp.area === 'salon' ? 'bg-info' : emp.area === 'inventario' ? 'bg-success' : 'bg-dark')= emp.area
                       td
                         small= new Date(emp.fechaIngreso).toLocaleDateString('es-AR')
-                      td
-                        if emp.activo
-                          span.badge.bg-success
-                            i.fas.fa-check.me-1
-                            | Activo
-                        else
-                          span.badge.bg-secondary
-                            i.fas.fa-times.me-1
-                            | Inactivo
                       td
                         .btn-group(role="group")
                           a.btn.btn-sm.btn-outline-primary(href=`/api/empleados/${emp.id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          button.btn.btn-sm.btn-outline-warning(title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/empleados/editar/${emp.id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(title="Desactivar")
-                            i.fas.fa-user-times
+                          button.btn.btn-sm.btn-outline-danger(data-id=emp.id, onclick="eliminarEmpleado(this)", title="Eliminar")
+                            i.fas.fa-trash
+    script.
+      async function eliminarEmpleado(button) {
+        if (confirm('¿Estás seguro de eliminar este empleado?')) {
+          const id = button.getAttribute('data-id');
+          try {
+            const response = await fetch(`/api/empleados/${id}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) {
+              alert('Empleado eliminado exitosamente');
+              location.reload();
+            } else {
+              alert(`Error: ${result.message}`);
+            }
+          } catch (error) {
+            alert('Error al eliminar el empleado');
+          }
+        }
+      }
   else
     .row
       .col-12

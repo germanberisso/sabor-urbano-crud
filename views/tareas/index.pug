@@ -13,36 +13,6 @@ block content
           i.fas.fa-plus.me-2
           | Nueva Tarea
 
-  .row.mb-4
-    .col-12
-      .card
-        .card-header.bg-primary.text-white
-          h5.mb-0
-            i.fas.fa-filter.me-2
-            | Filtros Rápidos
-        .card-body
-          .row.g-2
-            .col-md-2
-              a.btn.btn-outline-primary.w-100(href="/api/tareas?estado=pendiente", target="_blank")
-                i.fas.fa-clock.me-1
-                | Pendientes
-            .col-md-2
-              a.btn.btn-outline-warning.w-100(href="/api/tareas?estado=en_proceso", target="_blank")
-                i.fas.fa-play.me-1
-                | En Proceso
-            .col-md-2
-              a.btn.btn-outline-success.w-100(href="/api/tareas?estado=finalizada", target="_blank")
-                i.fas.fa-check.me-1
-                | Finalizadas
-            .col-md-3
-              a.btn.btn-outline-danger.w-100(href="/api/tareas/area/gestion_pedidos", target="_blank")
-                i.fas.fa-shopping-cart.me-1
-                | Gestión Pedidos
-            .col-md-3
-              a.btn.btn-outline-info.w-100(href="/api/tareas/area/control_inventario", target="_blank")
-                i.fas.fa-boxes.me-1
-                | Control Inventario
-
   if tareas && tareas.length > 0
     .row
       .col-12
@@ -74,36 +44,17 @@ block content
                           br
                           small.text-muted= tarea.descripcion
                       td
-                        if tarea.area === 'gestion_pedidos'
-                          span.badge.bg-primary Gestión Pedidos
-                        else if tarea.area === 'control_inventario'
-                          span.badge.bg-info Control Inventario
-                        else
-                          span.badge.bg-secondary= tarea.area
+                        span.badge(class= tarea.area === 'gestion_pedidos' ? 'bg-primary' : 'bg-info')= tarea.area
                       td
-                        if tarea.estado === 'pendiente'
-                          span.badge.bg-warning
-                            i.fas.fa-clock.me-1
-                            | Pendiente
-                        else if tarea.estado === 'en_proceso'
-                          span.badge.bg-primary
-                            i.fas.fa-play.me-1
-                            | En Proceso
-                        else if tarea.estado === 'finalizada'
-                          span.badge.bg-success
-                            i.fas.fa-check.me-1
-                            | Finalizada
+                        span.badge(class= tarea.estado === 'pendiente' ? 'bg-warning' : tarea.estado === 'en_proceso' ? 'bg-primary' : 'bg-success')
+                          i.fas(class= tarea.estado === 'pendiente' ? 'fa-clock' : tarea.estado === 'en_proceso' ? 'fa-play' : 'fa-check').me-1
+                          | #{tarea.estado}
                       td
-                        if tarea.prioridad === 'alta'
-                          span.badge.bg-danger Alta
-                        else if tarea.prioridad === 'media'
-                          span.badge.bg-warning Media
-                        else
-                          span.badge.bg-secondary Baja
+                        span.badge(class= tarea.prioridad === 'alta' ? 'bg-danger' : tarea.prioridad === 'media' ? 'bg-warning' : 'bg-secondary')= tarea.prioridad
                       td
-                        if tarea.empleado
+                        if tarea.empleadoAsignado
                           i.fas.fa-user.me-1
-                          | #{tarea.empleado}
+                          | #{tarea.empleadoAsignado}
                         else
                           span.text-muted Sin asignar
                       td
@@ -112,10 +63,28 @@ block content
                         .btn-group(role="group")
                           a.btn.btn-sm.btn-outline-primary(href=`/api/tareas/${tarea.id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          button.btn.btn-sm.btn-outline-warning(title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/tareas/editar/${tarea.id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=tarea.id, onclick="eliminarTarea(this)", title="Eliminar")
                             i.fas.fa-trash
+    script.
+      async function eliminarTarea(button) {
+        if (confirm('¿Estás seguro de eliminar esta tarea?')) {
+          const id = button.getAttribute('data-id');
+          try {
+            const response = await fetch(`/api/tareas/${id}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) {
+              alert('Tarea eliminada exitosamente');
+              location.reload();
+            } else {
+              alert(`Error: ${result.message}`);
+            }
+          } catch (error) {
+            alert('Error al eliminar la tarea');
+          }
+        }
+      }
   else
     .row
       .col-12
@@ -127,46 +96,3 @@ block content
             a.btn.btn-primary(href="/tareas/nueva")
               i.fas.fa-plus.me-2
               | Crear Primera Tarea
-
-  .row.mt-4
-    .col-12
-      .card
-        .card-header.bg-info.text-white
-          h5.mb-0
-            i.fas.fa-code.me-2
-            | Endpoints API Disponibles
-        .card-body
-          .row
-            .col-md-6
-              h6 Operaciones CRUD
-              ul.list-unstyled
-                li
-                  code GET /api/tareas
-                  |  - Obtener todas las tareas
-                li
-                  code GET /api/tareas/:id
-                  |  - Obtener tarea por ID
-                li
-                  code POST /api/tareas
-                  |  - Crear nueva tarea
-                li
-                  code PUT /api/tareas/:id
-                  |  - Actualizar tarea
-                li
-                  code DELETE /api/tareas/:id
-                  |  - Eliminar tarea
-            .col-md-6
-              h6 Filtros y Consultas
-              ul.list-unstyled
-                li
-                  code GET /api/tareas/filtrar
-                  |  - Filtros avanzados
-                li
-                  code GET /api/tareas/area/:area
-                  |  - Por área
-                li
-                  code GET /api/tareas/urgentes
-                  |  - Tareas urgentes
-                li
-                  code GET /api/tareas/estadisticas
-                  |  - Estadísticas

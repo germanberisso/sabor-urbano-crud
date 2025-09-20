@@ -1,149 +1,84 @@
-// Importa módulos necesarios para rutas y controladores
-const express = require('express');
-const router = express.Router();
-const EmpleadosController = require('../controllers/empleadosController');
-const validationMiddleware = require('../middleware/validation');
+import express from 'express'; // Express para rutas
+import EmpleadosController from '../controllers/empleadosController.js'; // Controlador empleados
+import ValidationMiddleware from '../middleware/validation.js'; // Middleware validaciones
+import Empleado from '../models/Empleado.js'; // Modelo para algunas ops
 
-// Instancia del controlador de empleados
-const empleadosController = new EmpleadosController();
-
-// Instancia del modelo para los nuevos endpoints de roles y áreas
-const Empleado = require('../models/Empleado');
-const empleadoModel = new Empleado();
+const router = express.Router(); // Router para empleados
+const empleadosController = new EmpleadosController(); // Instancia controlador
+const empleadoModel = new Empleado(); // Instancia modelo (usado en algunos lugares, pero no en rutas directas)
 
 // Middleware para validar campos específicos de empleados
-const validarEmpleado = (req, res, next) => {
-    const { rol, area } = req.body;
-    // Valida que el rol sea válido según especificaciones
-    if (rol && !['administrador', 'cocinero', 'repartidor', 'mozo', 'encargado_stock'].includes(rol)) {
-        return res.status(400).json({
+const validarEmpleado = (req, res, next) => { // Middleware: valida body para create/update empleados
+    const { nombre, apellido, email, telefono, rol, area, fechaIngreso } = req.body; // Extrae campos de body
+
+    // Validar que el body no esté vacío (para PUT)
+    if (req.method === 'PUT' && Object.keys(req.body).length === 0) { // Para PUT, si body vacío
+        return res.status(400).json({ // Error 400
+            success: false,
+            message: 'El body de la solicitud no puede estar vacío. Debe incluir al menos un campo para actualizar (nombre, apellido, email, telefono, rol, area, fechaIngreso).'
+        });
+    }
+
+    // Validar que al menos un campo válido esté presente (para PUT)
+    if (req.method === 'PUT') { // Para PUT
+        const camposValidos = [nombre, apellido, email, telefono, rol, area, fechaIngreso].some(field => field !== undefined); // Verifica si algún campo definido
+        if (!camposValidos) { // Si ninguno
+            return res.status(400).json({ // Error
+                success: false,
+                message: 'Debe proporcionar al menos un campo válido para actualizar (nombre, apellido, email, telefono, rol, area, fechaIngreso).'
+            });
+        }
+    }
+
+    // Validar rol si está presente
+    if (rol && !['administrador', 'cocinero', 'repartidor', 'mozo', 'encargado_stock'].includes(rol)) { // Si rol no en lista permitida
+        return res.status(400).json({ // Error
             success: false,
             message: 'Rol debe ser: administrador, cocinero, repartidor, mozo, encargado_stock'
         });
     }
-    // Valida que el área sea válida según especificaciones
-    if (area && !['cocina', 'reparto', 'salon', 'inventario', 'administracion'].includes(area)) {
-        return res.status(400).json({
+
+    // Validar área si está presente
+    if (area && !['cocina', 'reparto', 'salon', 'inventario', 'administracion'].includes(area)) { // Área inválida
+        return res.status(400).json({ // Error
             success: false,
             message: 'Área debe ser: cocina, reparto, salon, inventario, administracion'
         });
     }
-    // Continúa al siguiente middleware o controlador
-    next();
+
+    // Validar email si está presente (para POST, ya que PUT usa ValidationMiddleware.validarEmail)
+    if (req.method === 'POST' && email) { // Solo POST y si email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex email
+        if (!emailRegex.test(email)) { // No válido
+            return res.status(400).json({ // Error
+                success: false,
+                message: 'Formato de email no válido'
+            });
+        }
+    }
+
+    next(); // Continúa
 };
 
-// NUEVAS RUTAS PARA ROLES Y ÁREAS
+// Rutas API
+router.get('/', (req, res) => empleadosController.getAll(req, res)); // GET /empleados: todos
+router.get('/rol/:rol', (req, res) => empleadosController.getByRol(req, res)); // GET /empleados/rol/:rol: por rol
+router.get('/area/:area', (req, res) => empleadosController.getByArea(req, res)); // GET /empleados/area/:area: por área
+router.get('/:id', (req, res) => empleadosController.getById(req, res)); // GET /empleados/:id: uno
+router.get('/validar-email', (req, res) => empleadosController.validarEmail(req, res)); // GET /empleados/validar-email?email=...: valida único
 
-// Obtiene todos los roles disponibles
-router.get('/roles', async (req, res) => {
-    try {
-        const roles = await empleadoModel.getRoles();
-        // Responde con la lista de roles y su cantidad
-        res.json({
-            success: true,
-            message: 'Roles obtenidos exitosamente',
-            data: roles,
-            total: roles.length
-        });
-    } catch (error) {
-        // Maneja errores internos del servidor
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener roles',
-            error: error.message
-        });
-    }
-});
-
-// Obtiene todas las áreas disponibles
-router.get('/areas', async (req, res) => {
-    try {
-        const areas = await empleadoModel.getAreas();
-        // Responde con la lista de áreas y su cantidad
-        res.json({
-            success: true,
-            message: 'Áreas obtenidas exitosamente',
-            data: areas,
-            total: areas.length
-        });
-    } catch (error) {
-        // Maneja errores internos del servidor
-        res.status(500).json({
-            success: false,
-            message: 'Error al obtener áreas',
-            error: error.message
-        });
-    }
-});
-
-// Valida un rol específico
-router.get('/validar-rol/:rol', async (req, res) => {
-    try {
-        const { rol } = req.params;
-        const esValido = await empleadoModel.validarRol(rol);
-        // Responde con el resultado de la validación del rol
-        res.json({
-            success: true,
-            data: {
-                rol: rol,
-                valido: esValido,
-                mensaje: esValido ? 'Rol válido' : 'Rol no encontrado o inactivo'
-            }
-        });
-    } catch (error) {
-        // Maneja errores internos del servidor
-        res.status(500).json({
-            success: false,
-            message: 'Error al validar rol'
-        });
-    }
-});
-
-// Valida un área específica
-router.get('/validar-area/:area', async (req, res) => {
-    try {
-        const { area } = req.params;
-        const esValida = await empleadoModel.validarArea(area);
-        // Responde con el resultado de la validación del área
-        res.json({
-            success: true,
-            data: {
-                area: area,
-                valida: esValida,
-                mensaje: esValida ? 'Área válida' : 'Área no encontrada o inactiva'
-            }
-        });
-    } catch (error) {
-        // Maneja errores internos del servidor
-        res.status(500).json({
-            success: false,
-            message: 'Error al validar área'
-        });
-    }
-});
-// FIN DE NUEVAS RUTAS
-
-// Rutas principales CRUD para empleados
-router.get('/', (req, res) => empleadosController.getAll(req, res)); // Obtiene todos los empleados
-router.get('/activos', (req, res) => empleadosController.getActivos(req, res)); // Obtiene empleados activos
-router.get('/estadisticas', (req, res) => empleadosController.getEstadisticas(req, res)); // Obtiene estadísticas de empleados
-router.get('/validar-email', (req, res) => empleadosController.validarEmail(req, res)); // Valida email único
-router.get('/rol/:rol', (req, res) => empleadosController.getByRol(req, res)); // Filtra empleados por rol
-router.get('/area/:area', (req, res) => empleadosController.getByArea(req, res)); // Filtra empleados por área
-router.get('/:id', (req, res) => empleadosController.getById(req, res)); // Obtiene un empleado por ID
-
-// Crea un nuevo empleado con validaciones
-router.post('/', 
-    validationMiddleware.validarCamposRequeridos(['nombre', 'apellido', 'email', 'rol', 'area']), 
-    validationMiddleware.validarEmail,
-    validarEmpleado, 
-    (req, res) => empleadosController.create(req, res)
+router.post('/',  // POST /empleados: crea
+    ValidationMiddleware.validarCamposRequeridos(['nombre', 'apellido', 'email', 'rol', 'area']),  // Campos obligatorios
+    ValidationMiddleware.validarEmail, // Valida formato email
+    validarEmpleado,  // Validaciones específicas
+    (req, res) => empleadosController.create(req, res) // Controlador
 );
 
-// Actualiza un empleado existente con validaciones
-router.put('/:id', validarEmpleado, (req, res) => empleadosController.update(req, res));
+router.put('/:id',  // PUT /empleados/:id: actualiza
+    ValidationMiddleware.validarEmail, // Valida email si presente
+    validarEmpleado,  // Específicas
+    (req, res) => empleadosController.update(req, res) // Controlador
+);
+router.delete('/:id', (req, res) => empleadosController.delete(req, res)); // DELETE /empleados/:id: elimina
 
-// Desactiva un empleado (eliminación lógica)
-router.delete('/:id', (req, res) => empleadosController.delete(req, res));
-
-module.exports = router;
+export default router; // Exporta

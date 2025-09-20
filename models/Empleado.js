@@ -1,236 +1,180 @@
-// Importa módulos para manejo de archivos y rutas
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs'; // Importamos promesas de fs para operaciones asíncronas con archivos
+import { join, dirname } from 'path'; // Módulos para construir y manejar rutas de archivos
+import { fileURLToPath } from 'url'; // Para obtener la ruta del archivo actual en ES6 modules
 
-// Clase para gestionar operaciones CRUD de empleados usando JSON
 class Empleado {
-    // Inicializa la ruta al archivo empleados.json
-    constructor() {
-        this.filePath = path.join(__dirname, '../data/empleados.json');
+    constructor() { // Constructor: se llama al instanciar la clase, configura la ruta al archivo JSON
+        const __filename = fileURLToPath(import.meta.url); // Obtiene el nombre del archivo actual
+        const __dirname = dirname(__filename); // Obtiene el directorio del archivo actual
+        this.filePath = join(__dirname, '../data/empleados.json'); // Construye la ruta al archivo de empleados
     }
 
-    // Lee todos los empleados desde el archivo JSON
-    async getAll() {
-        try {
-            const data = await fs.readFile(this.filePath, 'utf8');
-            const json = JSON.parse(data);
-            return json.empleados || [];
-        } catch (error) {
-            console.error('Error al leer empleados:', error);
-            return [];
+    async getAll() { // Obtiene todos los empleados del archivo JSON
+        try { // Bloque para manejar errores
+            const data = await fs.readFile(this.filePath, 'utf8'); // Lee el archivo de forma asíncrona
+            const json = JSON.parse(data); // Convierte el JSON a objeto JavaScript
+            return json.empleados || []; // Retorna el array de empleados o vacío si no existe
+        } catch (error) { // Captura errores de lectura o parseo
+            console.error('Error al leer empleados:', error); // Imprime el error
+            return []; // Retorna array vacío en caso de error
         }
     }
 
-    // NUEVOS MÉTODOS PARA ROLES Y ÁREAS
-
-    // Lee la lista de roles desde roles.json
-    async getRoles() {
+    async getRoles() { // Obtiene la lista de roles desde un archivo separado
         try {
-            const rolesPath = path.join(__dirname, '../data/roles.json');
-            const data = await fs.readFile(rolesPath, 'utf8');
-            return JSON.parse(data);
-        } catch (error) {
-            console.error('Error al leer roles:', error);
-            return [];
+            const rolesPath = join(dirname(this.filePath), 'roles.json'); // Construye ruta al archivo de roles
+            const data = await fs.readFile(rolesPath, 'utf8'); // Lee el archivo
+            return JSON.parse(data); // Parsea y retorna el JSON
+        } catch (error) { // Maneja errores
+            console.error('Error al leer roles:', error); // Imprime error
+            return []; // Retorna vacío
         }
     }
 
-    // Lee la lista de áreas desde areas.json
-    async getAreas() {
+    async getAreas() { // Obtiene la lista de áreas desde un archivo separado
         try {
-            const areasPath = path.join(__dirname, '../data/areas.json');
-            const data = await fs.readFile(areasPath, 'utf8');
-            return JSON.parse(data);
-        } catch (error) {
-            console.error('Error al leer áreas:', error);
-            return [];
+            const areasPath = join(dirname(this.filePath), 'areas.json'); // Ruta al archivo de áreas
+            const data = await fs.readFile(areasPath, 'utf8'); // Lee el archivo
+            return JSON.parse(data); // Parsea y retorna
+        } catch (error) { // Maneja errores
+            console.error('Error al leer áreas:', error); // Imprime error
+            return []; // Retorna vacío
+        }
+    }
+    
+    async getById(id) { // Obtiene un empleado por su ID
+        try {
+            const empleados = await this.getAll(); // Obtiene todos los empleados
+            return empleados.find(empleado => empleado.id === parseInt(id)); // Busca y retorna el que coincida, null si no
+        } catch (error) { // Maneja errores
+            console.error('Error al obtener empleado por ID:', error); // Imprime error
+            return null; // Retorna null en error
         }
     }
 
-    // Valida si un rol es válido y está activo
-    async validarRol(rol) {
-        const roles = await this.getRoles();
-        return roles.some(r => r.nombre === rol && r.activo);
-    }
-
-    // Valida si un área es válida y está activa
-    async validarArea(area) {
-        const areas = await this.getAreas();
-        return areas.some(a => a.nombre === area && a.activa);
-    }
-    // FIN DE NUEVOS MÉTODOS
-
-    // Obtiene un empleado por su ID
-    async getById(id) {
+    async getByRol(rol) { // Filtra empleados por rol y solo los activos
         try {
-            const empleados = await this.getAll();
-            return empleados.find(empleado => empleado.id === parseInt(id));
-        } catch (error) {
-            console.error('Error al obtener empleado por ID:', error);
-            return null;
-        }
-    }
-
-    // Filtra empleados por rol, solo activos
-    async getByRol(rol) {
-        try {
-            const empleados = await this.getAll();
-            return empleados.filter(empleado => 
-                empleado.rol === rol && empleado.activo
+            const empleados = await this.getAll(); // Obtiene todos
+            return empleados.filter(empleado =>  // Filtra por rol y activo
+                empleado.rol === rol && empleado.activo // Solo si rol coincide y está activo
             );
         } catch (error) {
-            console.error('Error al filtrar por rol:', error);
-            return [];
+            console.error('Error al filtrar por rol:', error); // Imprime error
+            return []; // Retorna vacío
         }
     }
 
-    // Filtra empleados por área, solo activos
-    async getByArea(area) {
+    async getByArea(area) { // Filtra empleados por área y solo los activos
         try {
-            const empleados = await this.getAll();
-            return empleados.filter(empleado => 
-                empleado.area === area && empleado.activo
+            const empleados = await this.getAll(); // Obtiene todos
+            return empleados.filter(empleado =>  // Filtra por área y activo
+                empleado.area === area && empleado.activo // Coincide área y activo
             );
         } catch (error) {
-            console.error('Error al filtrar por área:', error);
-            return [];
+            console.error('Error al filtrar por área:', error); // Imprime error
+            return []; // Retorna vacío
         }
     }
-
-    // Obtiene todos los empleados activos
-    async getActivos() {
+    
+    async create(nuevoEmpleado) { // Crea un nuevo empleado con los datos dados
         try {
-            const empleados = await this.getAll();
-            return empleados.filter(empleado => empleado.activo);
-        } catch (error) {
-            console.error('Error al obtener empleados activos:', error);
-            return [];
-        }
-    }
-
-    // Crea un nuevo empleado con validaciones
-    async create(nuevoEmpleado) {
-        try {
-            // Valida que el email no esté en uso
-            const emailUnico = await this.validarEmailUnico(nuevoEmpleado.email);
-            if (!emailUnico) {
-                throw new Error('El email ya está en uso');
+            const emailUnico = await this.validarEmailUnico(nuevoEmpleado.email); // Verifica si el email es único
+            if (!emailUnico) { // Si no lo es
+                throw new Error('El email ya está en uso'); // Lanza error
             }
-            const empleados = await this.getAll();
-            // Genera un nuevo ID incremental
-            const nuevoId = empleados.length > 0 ? Math.max(...empleados.map(e => e.id)) + 1 : 1;
-            // Crea el objeto empleado con valores por defecto
-            const empleado = {
-                id: nuevoId,
-                nombre: nuevoEmpleado.nombre,
-                apellido: nuevoEmpleado.apellido,
-                email: nuevoEmpleado.email,
-                telefono: nuevoEmpleado.telefono,
-                rol: nuevoEmpleado.rol, // administrador, cocinero, repartidor, mozo, encargado_stock
-                area: nuevoEmpleado.area, // cocina, reparto, salon, inventario, administracion
-                fechaIngreso: nuevoEmpleado.fechaIngreso || new Date().toISOString().split('T')[0],
-                activo: true
+            const empleados = await this.getAll(); // Obtiene todos los existentes
+            const nuevoId = empleados.length > 0 ? Math.max(...empleados.map(e => e.id)) + 1 : 1; // Genera nuevo ID
+            const empleado = { // Crea el objeto del nuevo empleado
+                id: nuevoId, // ID generado
+                nombre: nuevoEmpleado.nombre, // Nombre proporcionado
+                apellido: nuevoEmpleado.apellido, // Apellido
+                email: nuevoEmpleado.email, // Email
+                telefono: nuevoEmpleado.telefono, // Teléfono
+                rol: nuevoEmpleado.rol, // Rol
+                area: nuevoEmpleado.area, // Área
+                fechaIngreso: nuevoEmpleado.fechaIngreso || new Date().toISOString().split('T')[0] // Fecha de ingreso, hoy si no se da
             };
-            empleados.push(empleado);
-            // Guarda los cambios en el archivo JSON
-            await this.saveAll(empleados);
-            return empleado;
-        } catch (error) {
-            console.error('Error al crear empleado:', error);
-            throw error;
+            empleados.push(empleado); // Agrega al array
+            await this.saveAll(empleados); // Guarda en archivo
+            return empleado; // Retorna el creado
+        } catch (error) { // Maneja errores
+            console.error('Error al crear empleado:', error); // Imprime
+            throw error; // Relanza
         }
     }
 
-    // Actualiza un empleado existente
-    async update(id, datosActualizados) {
+    async update(id, datosActualizados) { // Actualiza un empleado por ID con nuevos datos
         try {
-            const empleados = await this.getAll();
-            const index = empleados.findIndex(empleado => empleado.id === parseInt(id));
-            // Verifica si el empleado existe
-            if (index === -1) {
-                throw new Error('Empleado no encontrado');
+            const empleados = await this.getAll(); // Obtiene todos
+            const index = empleados.findIndex(empleado => empleado.id === parseInt(id)); // Encuentra índice
+            if (index === -1) { // Si no existe
+                throw new Error('Empleado no encontrado'); // Lanza error
             }
-            // Valida email único si se actualiza
-            if (datosActualizados.email) {
-                const emailUnico = await this.validarEmailUnico(datosActualizados.email, parseInt(id));
-                if (!emailUnico) {
-                    throw new Error('El email ya está en uso');
+            if (datosActualizados.email) { // Si se actualiza email
+                const emailUnico = await this.validarEmailUnico(datosActualizados.email, parseInt(id)); // Verifica unicidad excluyendo actual
+                if (!emailUnico) { // Si no es único
+                    throw new Error('El email ya está en uso'); // Error
                 }
             }
-            // Actualiza los datos del empleado
-            empleados[index] = { ...empleados[index], ...datosActualizados };
-            await this.saveAll(empleados);
-            return empleados[index];
+            empleados[index] = { ...empleados[index], ...datosActualizados }; // Fusiona datos nuevos con el existente
+            await this.saveAll(empleados); // Guarda
+            return empleados[index]; // Retorna actualizado
         } catch (error) {
-            console.error('Error al actualizar empleado:', error);
-            throw error;
+            console.error('Error al actualizar empleado:', error); // Imprime
+            throw error; // Relanza
         }
     }
 
-    // Desactiva un empleado (eliminación lógica)
-    async delete(id) {
-        try {
-            return await this.update(id, { activo: false });
-        } catch (error) {
-            console.error('Error al eliminar empleado:', error);
-            throw error;
-        }
-    }
+    async delete(id) { // Elimina un empleado por ID
+    try {
+      // Leer el archivo JSON
+      const data = await fs.readFile(this.filePath, 'utf-8'); // Lee el archivo
+      let empleados = JSON.parse(data).empleados; // Parsea y obtiene array de empleados
 
-    // Valida si un email está disponible, excluyendo un ID opcional
-    async validarEmailUnico(email, idExcluir = null) {
+      // Verificar si el empleado existe
+      const empleadoIndex = empleados.findIndex(emp => emp.id === parseInt(id)); // Encuentra índice
+      if (empleadoIndex === -1) { // Si no existe
+        throw new Error('Empleado no encontrado'); // Error
+      }
+
+      // Filtrar el empleado con el id proporcionado
+      empleados = empleados.filter(emp => emp.id !== parseInt(id)); // Crea nuevo array sin el ID
+
+      // Guardar el archivo actualizado
+      await fs.writeFile(this.filePath, JSON.stringify({ empleados }, null, 2)); // Guarda JSON formateado
+
+      return { id: parseInt(id) }; // Retorna ID eliminado para confirmar
+    } catch (error) {
+      console.error('Error al eliminar empleado:', error); // Imprime
+      throw error; // Relanza
+    }
+  }
+
+
+    async validarEmailUnico(email, idExcluir = null) { // Valida si email es único, excluyendo opcional un ID
         try {
-            const empleados = await this.getAll();
-            return !empleados.some(emp => 
-                emp.email === email && 
-                emp.id !== idExcluir && 
-                emp.activo
+            const empleados = await this.getAll(); // Obtiene todos
+            return !empleados.some(emp =>  // Retorna true si NO hay coincidencia
+                emp.email === email &&  // Email coincide
+                emp.id !== idExcluir &&  // No es el ID excluido
+                emp.activo // Y está activo
             );
         } catch (error) {
-            console.error('Error al validar email:', error);
-            return false;
+            console.error('Error al validar email:', error); // Imprime
+            return false; // En error, asume no único
         }
     }
 
-    // Calcula estadísticas de empleados por rol y área
-    async getEstadisticas() {
+    
+    async saveAll(empleados) { // Guarda el array completo de empleados en el archivo
         try {
-            const empleados = await this.getActivos();
-            // Genera estadísticas agrupadas por rol y área
-            const stats = {
-                total: empleados.length,
-                porRol: {
-                    administrador: empleados.filter(e => e.rol === 'administrador').length,
-                    cocinero: empleados.filter(e => e.rol === 'cocinero').length,
-                    repartidor: empleados.filter(e => e.rol === 'repartidor').length,
-                    mozo: empleados.filter(e => e.rol === 'mozo').length,
-                    encargado_stock: empleados.filter(e => e.rol === 'encargado_stock').length
-                },
-                porArea: {
-                    cocina: empleados.filter(e => e.area === 'cocina').length,
-                    reparto: empleados.filter(e => e.area === 'reparto').length,
-                    salon: empleados.filter(e => e.area === 'salon').length,
-                    inventario: empleados.filter(e => e.area === 'inventario').length,
-                    administracion: empleados.filter(e => e.area === 'administracion').length
-                }
-            };
-            return stats;
+            const data = JSON.stringify({ empleados }, null, 2); // Convierte a JSON formateado
+            await fs.writeFile(this.filePath, data, 'utf8'); // Escribe en archivo
         } catch (error) {
-            console.error('Error al obtener estadísticas de empleados:', error);
-            return {};
-        }
-    }
-
-    // Guarda todos los empleados en el archivo JSON
-    async saveAll(empleados) {
-        try {
-            const data = JSON.stringify({ empleados }, null, 2);
-            await fs.writeFile(this.filePath, data, 'utf8');
-        } catch (error) {
-            console.error('Error al guardar empleados:', error);
-            throw error;
+            console.error('Error al guardar empleados:', error); // Imprime
+            throw error; // Relanza
         }
     }
 }
 
-module.exports = Empleado;
+export default Empleado; // Exporta la clase

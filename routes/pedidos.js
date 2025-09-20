@@ -1,52 +1,75 @@
-// Importa módulos necesarios para rutas y controladores
-const express = require('express');
-const router = express.Router();
-const PedidosController = require('../controllers/pedidosController');
-const validationMiddleware = require('../middleware/validation');
+import express from 'express'; // Express
+import PedidosController from '../controllers/pedidosController.js'; // Controlador
+import ValidationMiddleware from '../middleware/validation.js'; // Validaciones
 
-// Instancia del controlador de pedidos
-const pedidosController = new PedidosController();
+const router = express.Router(); // Router pedidos
+const pedidosController = new PedidosController(); // Instancia
 
-// Middleware para validar campos específicos de pedidos
-const validarPedido = (req, res, next) => {
-    const { tipo, plataforma } = req.body;
-    // Valida que el tipo sea válido según especificaciones
-    if (tipo && !['presencial', 'delivery'].includes(tipo)) {
+const validarPedido = (req, res, next) => { // Middleware: valida para create/update pedidos
+    const { cliente, items, total, tipo, plataforma, estado, tiempoEstimado, observaciones } = req.body; // Campos
+
+    // Validar que el body no esté vacío (para PUT)
+    if (req.method === 'PUT' && Object.keys(req.body).length === 0) { // PUT vacío
         return res.status(400).json({
             success: false,
-            message: 'Tipo debe ser: presencial o delivery'
+            message: 'El body de la solicitud no puede estar vacío. Debe incluir al menos un campo para actualizar.'
         });
     }
-    // Valida que la plataforma sea válida según especificaciones
-    if (plataforma && !['rappi', 'pedidosya', 'propia', 'local'].includes(plataforma)) {
+
+    // Validar que al menos un campo válido esté presente (para PUT)
+    if (req.method === 'PUT') { // PUT sin válidos
+        const camposValidos = [cliente, items, total, tipo, plataforma, estado, tiempoEstimado, observaciones].some(field => field !== undefined);
+        if (!camposValidos) {
+            return res.status(400).json({
+                success: false,
+                message: 'Debe proporcionar al menos un campo válido para actualizar.'
+            });
+        }
+    }
+
+    // Validar tipo si está presente
+    if (tipo && !['presencial', 'delivery'].includes(tipo)) { // Tipo inválido
         return res.status(400).json({
             success: false,
-            message: 'Plataforma debe ser: rappi, pedidosya, propia o local'
+            message: 'Tipo debe ser: presencial, delivery'
         });
     }
-    // Continúa al siguiente middleware o controlador
-    next();
+
+    // Validar plataforma si está presente
+    if (plataforma && !['rappi', 'pedidosya', 'propia', 'local'].includes(plataforma)) { // Plataforma inválida
+        return res.status(400).json({
+            success: false,
+            message: 'Plataforma debe ser: rappi, pedidosya, propia, local'
+        });
+    }
+
+    // Validar estado si está presente
+    if (estado && !['pendiente', 'en_preparacion', 'listo', 'en_camino', 'entregado', 'finalizado'].includes(estado)) { // Estado inválido
+        return res.status(400).json({
+            success: false,
+            message: 'Estado debe ser: pendiente, en_preparacion, listo, en_camino, entregado, finalizado'
+        });
+    }
+
+    next(); // Continúa
 };
 
-// Rutas principales CRUD para pedidos
-router.get('/', (req, res) => pedidosController.getAll(req, res)); // Obtiene todos los pedidos
-router.get('/estadisticas', (req, res) => pedidosController.getEstadisticas(req, res)); // Obtiene estadísticas de pedidos
-router.get('/tipo/:tipo', (req, res) => pedidosController.getByTipo(req, res)); // Filtra pedidos por tipo
-router.get('/plataforma/:plataforma', (req, res) => pedidosController.getByPlataforma(req, res)); // Filtra pedidos por plataforma
-router.get('/estado/:estado', (req, res) => pedidosController.getByEstado(req, res)); // Filtra pedidos por estado
-router.get('/:id', (req, res) => pedidosController.getById(req, res)); // Obtiene un pedido por ID
+// Rutas API
+router.get('/', (req, res) => pedidosController.getAll(req, res)); // GET /pedidos: todos
+router.get('/tipo/:tipo', (req, res) => pedidosController.getByTipo(req, res)); // GET /pedidos/tipo/:tipo: por tipo
+router.get('/plataforma/:plataforma', (req, res) => pedidosController.getByPlataforma(req, res)); // GET /pedidos/plataforma/:plat: por plat
+router.get('/:id', (req, res) => pedidosController.getById(req, res)); // GET /pedidos/:id: uno
 
-// Crea un nuevo pedido con validaciones
-router.post('/', 
-    validationMiddleware.validarCamposRequeridos(['cliente', 'items', 'total', 'tipo', 'plataforma']), 
-    validarPedido, 
-    (req, res) => pedidosController.create(req, res)
+router.post('/',  // POST /pedidos: crea
+    ValidationMiddleware.validarCamposRequeridos(['cliente', 'items', 'total', 'tipo', 'plataforma', 'estado']),  // Obligatorios
+    validarPedido,  // Específicos
+    (req, res) => pedidosController.create(req, res) // Controlador
 );
 
-// Actualiza un pedido existente con validaciones
-router.put('/:id', validarPedido, (req, res) => pedidosController.update(req, res));
+router.put('/:id',  // PUT /pedidos/:id: actualiza
+    validarPedido,  // Valida
+    (req, res) => pedidosController.update(req, res) // Controlador
+);
+router.delete('/:id', (req, res) => pedidosController.delete(req, res)); // DELETE /pedidos/:id: elimina
 
-// Elimina un pedido
-router.delete('/:id', (req, res) => pedidosController.delete(req, res));
-
-module.exports = router;
+export default router; // Exporta

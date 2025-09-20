@@ -1,27 +1,23 @@
-// Importa el modelo de Pedido para interactuar con los datos
-const PedidoModel = require('../models/Pedido');
+import PedidoModel from '../models/Pedido.js'; // Modelo Pedido
+import ClienteModel from '../models/Cliente.js'; // Modelo Cliente para validaciones
 
-// Controlador para gestionar operaciones CRUD de pedidos
-class PedidosController {
-    // Inicializa el modelo de Pedido
-    constructor() {
-        this.pedidoModel = new PedidoModel();
+class PedidosController { // Controlador para pedidos
+    constructor() { // Inicializa modelos
+        this.pedidoModel = new PedidoModel(); // Para pedidos
+        this.clienteModel = new ClienteModel(); // Para clientes
     }
 
-    // Obtiene todos los pedidos de la base de datos
-    async getAll(req, res) {
+    async getAll(req, res) { // Todos pedidos: GET /
         try {
-            const pedidos = await this.pedidoModel.getAll();
-            // Responde con lista de pedidos y su cantidad
-            res.json({
+            const pedidos = await this.pedidoModel.getAll(); // Obtiene con mapeo de cliente
+            res.json({ // Éxito
                 success: true,
                 data: pedidos,
                 total: pedidos.length
             });
         } catch (error) {
-            console.error('Error en getAll pedidos:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en getAll pedidos:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al obtener los pedidos',
                 error: error.message
@@ -29,27 +25,23 @@ class PedidosController {
         }
     }
 
-    // Obtiene un pedido específico por su ID
-    async getById(req, res) {
+    async getById(req, res) { // Por ID: GET /:id
         try {
-            const { id } = req.params;
-            const pedido = await this.pedidoModel.getById(id);
-            // Verifica si el pedido existe
-            if (!pedido) {
-                return res.status(404).json({
+            const { id } = req.params; // ID
+            const pedido = await this.pedidoModel.getById(id); // Busca
+            if (!pedido) { // No encontrado
+                return res.status(404).json({ // 404
                     success: false,
                     message: 'Pedido no encontrado'
                 });
             }
-            // Responde con los datos del pedido
-            res.json({
+            res.json({ // Éxito
                 success: true,
                 data: pedido
             });
         } catch (error) {
-            console.error('Error en getById pedido:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en getById pedido:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al obtener el pedido',
                 error: error.message
@@ -57,30 +49,26 @@ class PedidosController {
         }
     }
 
-    // Filtra pedidos por tipo (presencial o delivery)
-    async getByTipo(req, res) {
+    async getByTipo(req, res) { // Por tipo: GET /tipo/:tipo
         try {
-            const { tipo } = req.params;
-            // Lista de tipos válidos para validación
-            const tiposValidos = ['presencial', 'delivery'];
-            if (!tiposValidos.includes(tipo)) {
-                return res.status(400).json({
+            const { tipo } = req.params; // Tipo
+            const tiposValidos = ['presencial', 'delivery']; // Lista
+            if (!tiposValidos.includes(tipo)) { // Valida
+                return res.status(400).json({ // 400
                     success: false,
-                    message: 'Tipo no válido. Use: presencial o delivery'
+                    message: 'Tipo no válido. Use: presencial, delivery'
                 });
             }
-            const pedidos = await this.pedidoModel.getByTipo(tipo);
-            // Responde con pedidos filtrados por tipo
-            res.json({
+            const pedidos = await this.pedidoModel.getByTipo(tipo); // Filtra
+            res.json({ // Éxito
                 success: true,
                 data: pedidos,
                 tipo: tipo,
                 total: pedidos.length
             });
         } catch (error) {
-            console.error('Error en getByTipo:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en getByTipo:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al filtrar pedidos por tipo',
                 error: error.message
@@ -88,30 +76,26 @@ class PedidosController {
         }
     }
 
-    // Filtra pedidos por plataforma (e.g., rappi, pedidosya)
-    async getByPlataforma(req, res) {
+    async getByPlataforma(req, res) { // Por plataforma: GET /plataforma/:plataforma
         try {
-            const { plataforma } = req.params;
-            // Lista de plataformas válidas para validación
-            const plataformasValidas = ['rappi', 'pedidosya', 'propia', 'local'];
-            if (!plataformasValidas.includes(plataforma)) {
-                return res.status(400).json({
+            const { plataforma } = req.params; // Plataforma
+            const plataformasValidas = ['rappi', 'pedidosya', 'propia', 'local']; // Lista
+            if (!plataformasValidas.includes(plataforma)) { // Valida
+                return res.status(400).json({ // 400
                     success: false,
                     message: 'Plataforma no válida. Use: rappi, pedidosya, propia, local'
                 });
             }
-            const pedidos = await this.pedidoModel.getByPlataforma(plataforma);
-            // Responde con pedidos filtrados por plataforma
-            res.json({
+            const pedidos = await this.pedidoModel.getByPlataforma(plataforma); // Filtra
+            res.json({ // Éxito
                 success: true,
                 data: pedidos,
                 plataforma: plataforma,
                 total: pedidos.length
             });
         } catch (error) {
-            console.error('Error en getByPlataforma:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en getByPlataforma:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al filtrar pedidos por plataforma',
                 error: error.message
@@ -119,22 +103,26 @@ class PedidosController {
         }
     }
 
-    // Filtra pedidos por estado (e.g., en_preparacion, entregado)
-    async getByEstado(req, res) {
+    async getByEstado(req, res) { // Por estado: GET /estado/:estado (nota: no usado en rutas, pero definido)
         try {
-            const { estado } = req.params;
-            const pedidos = await this.pedidoModel.getByEstado(estado);
-            // Responde con pedidos filtrados por estado
-            res.json({
+            const { estado } = req.params; // Estado
+            const estadosValidos = ['pendiente', 'en_preparacion', 'listo', 'en_camino', 'entregado', 'finalizado']; // Lista
+            if (!estadosValidos.includes(estado)) { // Valida
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Estado no válido. Use: pendiente, en_preparacion, listo, en_camino, entregado, finalizado'
+                });
+            }
+            const pedidos = await this.pedidoModel.getByEstado(estado); // Filtra
+            res.json({ // Éxito
                 success: true,
                 data: pedidos,
                 estado: estado,
                 total: pedidos.length
             });
         } catch (error) {
-            console.error('Error en getByEstado pedidos:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en getByEstado:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al filtrar pedidos por estado',
                 error: error.message
@@ -142,51 +130,81 @@ class PedidosController {
         }
     }
 
-    // Crea un nuevo pedido con validaciones
-    async create(req, res) {
+    async create(req, res) { // Crea pedido: POST /
         try {
-            const datosPedido = req.body;
-            // Verifica campos obligatorios
-            if (!datosPedido.cliente || !datosPedido.items || !datosPedido.total) {
-                return res.status(400).json({
+            const datosPedido = req.body; // Datos
+            // Validar campos requeridos
+            if (!datosPedido.clienteId || !datosPedido.itemsText || !datosPedido.total || !datosPedido.tipo || !datosPedido.plataforma) { // Obligatorios
+                return res.status(400).json({ // 400
                     success: false,
-                    message: 'Cliente, items y total son obligatorios'
+                    message: 'Campos requeridos faltantes: clienteId, itemsText, total, tipo, plataforma'
                 });
             }
-            // Valida tipo contra lista predefinida
-            const tiposValidos = ['presencial', 'delivery'];
+            // Parsear itemsText en un array de ítems
+            const itemsText = datosPedido.itemsText.trim(); // Limpia texto de items
+            const items = []; // Array vacío para items
+            const itemLines = itemsText.split(',').map(line => line.trim()); // Divide por comas
+            let totalItems = 0; // Contador de items
+            for (const line of itemLines) { // Para cada línea
+                const match = line.match(/^(\d+)\s+(.+)/); // Regex para cantidad + nombre
+                if (match) { // Si coincide
+                    const cantidad = parseInt(match[1]); // Cantidad
+                    const producto = match[2]; // Producto
+                    items.push({ producto, cantidad }); // Agrega
+                    totalItems += cantidad; // Suma
+                } else { // Si no, asume cantidad 1
+                    items.push({ producto: line, cantidad: 1 });
+                    totalItems += 1;
+                }
+            }
+            // Asignar precio proporcional basado en el total
+            const total = parseFloat(datosPedido.total); // Total numérico
+            if (totalItems > 0) { // Si hay items
+                const precioPorItem = total / totalItems; // Precio unitario
+                items.forEach(item => { // Para cada item
+                    item.precio = precioPorItem * item.cantidad; // Calcula precio
+                });
+            } else { // No hay items
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Debe especificar al menos un ítem'
+                });
+            }
+            datosPedido.items = items; // Asigna items procesados
+            delete datosPedido.itemsText; // Elimina texto original
+
+            // Validar clienteId
+            const cliente = await this.clienteModel.getById(datosPedido.clienteId); // Busca cliente
+            if (!cliente) { // No existe
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Cliente no encontrado'
+                });
+            }
+
+            const tiposValidos = ['presencial', 'delivery']; // Valida tipo
             if (!tiposValidos.includes(datosPedido.tipo)) {
-                return res.status(400).json({
+                return res.status(400).json({ // 400
                     success: false,
-                    message: 'Tipo debe ser: presencial o delivery'
+                    message: 'Tipo no válido'
                 });
             }
-            // Valida plataforma contra lista predefinida
-            const plataformasValidas = ['rappi', 'pedidosya', 'propia', 'local'];
+            const plataformasValidas = ['rappi', 'pedidosya', 'propia', 'local']; // Valida plataforma
             if (!plataformasValidas.includes(datosPedido.plataforma)) {
-                return res.status(400).json({
+                return res.status(400).json({ // 400
                     success: false,
-                    message: 'Plataforma debe ser: rappi, pedidosya, propia o local'
+                    message: 'Plataforma no válida'
                 });
             }
-            // Valida que items sea un arreglo no vacío
-            if (!Array.isArray(datosPedido.items) || datosPedido.items.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Debe incluir al menos un item'
-                });
-            }
-            const nuevoPedido = await this.pedidoModel.create(datosPedido);
-            // Responde con el pedido creado
-            res.status(201).json({
+            const nuevoPedido = await this.pedidoModel.create(datosPedido); // Crea
+            res.status(201).json({ // 201
                 success: true,
                 message: 'Pedido creado exitosamente',
                 data: nuevoPedido
             });
         } catch (error) {
-            console.error('Error en create pedido:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en create pedido:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al crear el pedido',
                 error: error.message
@@ -194,30 +212,115 @@ class PedidosController {
         }
     }
 
-    // Actualiza un pedido existente
-    async update(req, res) {
+    async update(req, res) { // Actualiza pedido: PUT /:id (requiere todos los campos, como create)
         try {
-            const { id } = req.params;
-            const datosActualizados = req.body;
-            // Verifica si el pedido existe
-            const pedidoExistente = await this.pedidoModel.getById(id);
+            const { id } = req.params; // ID
+            const datosActualizados = req.body; // Datos
+
+            // Validar campos requeridos individualmente
+            const missingFields = []; // Array para faltantes
+            if (!datosActualizados.clienteId) missingFields.push('clienteId');
+            if (!datosActualizados.itemsText) missingFields.push('itemsText');
+            if (!datosActualizados.total) missingFields.push('total');
+            if (!datosActualizados.tipo) missingFields.push('tipo');
+            if (!datosActualizados.plataforma) missingFields.push('plataforma');
+            if (missingFields.length > 0) { // Si faltan
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: `Campos requeridos faltantes: ${missingFields.join(', ')}`
+                });
+            }
+
+            // Validar clienteId
+            const cliente = await this.clienteModel.getById(datosActualizados.clienteId); // Busca
+            if (!cliente) { // No existe
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Cliente no encontrado'
+                });
+            }
+
+            // Parsear itemsText en un array de ítems
+            const itemsText = datosActualizados.itemsText.trim(); // Limpia
+            if (!itemsText) { // Vacío
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'El campo ítems no puede estar vacío'
+                });
+            }
+            const items = []; // Array
+            const itemLines = itemsText.split(',').map(line => line.trim()); // Divide
+            let totalItems = 0;
+            for (const line of itemLines) { // Procesa líneas
+                if (!line) continue; // Ignora vacías
+                const match = line.match(/^(\d+)\s+(.+)/); // Regex
+                if (match) {
+                    const cantidad = parseInt(match[1]);
+                    const producto = match[2];
+                    items.push({ producto, cantidad });
+                    totalItems += cantidad;
+                } else {
+                    items.push({ producto: line, cantidad: 1 });
+                    totalItems += 1;
+                }
+            }
+            if (items.length === 0) { // No items válidos
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Debe especificar al menos un ítem válido'
+                });
+            }
+
+            // Asignar precio proporcional basado en el total
+            const total = parseFloat(datosActualizados.total); // Total
+            if (isNaN(total) || total <= 0) { // Valida total
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'El total debe ser un número mayor a 0'
+                });
+            }
+            const precioPorItem = total / totalItems; // Precio
+            items.forEach(item => { // Asigna
+                item.precio = precioPorItem * item.cantidad;
+            });
+            datosActualizados.items = items; // Asigna
+            delete datosActualizados.itemsText; // Limpia
+
+            // Validar tipo y plataforma
+            const tiposValidos = ['presencial', 'delivery']; // Valida tipo
+            if (!tiposValidos.includes(datosActualizados.tipo)) {
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Tipo no válido. Use: presencial, delivery'
+                });
+            }
+            const plataformasValidas = ['rappi', 'pedidosya', 'propia', 'local']; // Valida plat
+            if (!plataformasValidas.includes(datosActualizados.plataforma)) {
+                return res.status(400).json({ // 400
+                    success: false,
+                    message: 'Plataforma no válida. Use: rappi, pedidosya, propia, local'
+                });
+            }
+
+            // Verificar que el pedido existe
+            const pedidoExistente = await this.pedidoModel.getById(id); // Busca
             if (!pedidoExistente) {
-                return res.status(404).json({
+                return res.status(404).json({ // 404
                     success: false,
                     message: 'Pedido no encontrado'
                 });
             }
-            const pedidoActualizado = await this.pedidoModel.update(id, datosActualizados);
-            // Responde con el pedido actualizado
-            res.json({
+
+            // Actualizar el pedido
+            const pedidoActualizado = await this.pedidoModel.update(id, datosActualizados); // Actualiza
+            res.json({ // Éxito
                 success: true,
                 message: 'Pedido actualizado exitosamente',
                 data: pedidoActualizado
             });
         } catch (error) {
-            console.error('Error en update pedido:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
+            console.error('Error en update pedido:', error); // Log
+            res.status(500).json({ // 500
                 success: false,
                 message: 'Error al actualizar el pedido',
                 error: error.message
@@ -225,27 +328,24 @@ class PedidosController {
         }
     }
 
-    // Elimina un pedido
-    async delete(req, res) {
+    async delete(req, res) { // Elimina: DELETE /:id
         try {
-            const { id } = req.params;
-            const resultado = await this.pedidoModel.delete(id);
-            // Responde con confirmación de eliminación
-            res.json({
+            const { id } = req.params; // ID
+            const resultado = await this.pedidoModel.delete(id); // Elimina
+            res.json({ // Éxito
                 success: true,
-                message: 'Pedido eliminado exitosamente'
+                message: 'Pedido eliminado exitosamente',
+                data: resultado
             });
         } catch (error) {
-            console.error('Error en delete pedido:', error);
-            // Maneja error si el pedido no existe
-            if (error.message === 'Pedido no encontrado') {
+            console.error('Error en delete pedido:', error); // Log
+            if (error.message === 'Pedido no encontrado') { // 404
                 res.status(404).json({
                     success: false,
                     message: error.message
                 });
             } else {
-                // Maneja otros errores internos
-                res.status(500).json({
+                res.status(500).json({ // 500
                     success: false,
                     message: 'Error al eliminar el pedido',
                     error: error.message
@@ -254,25 +354,41 @@ class PedidosController {
         }
     }
 
-    // Obtiene estadísticas de pedidos por tipo, plataforma y estado
-    async getEstadisticas(req, res) {
+    // Métodos para renderizar vistas Pug
+    async renderIndex(req, res) { // Renderiza vista index.pug con lista de pedidos
         try {
-            const estadisticas = await this.pedidoModel.getEstadisticas();
-            // Responde con estadísticas agrupadas
-            res.json({
-                success: true,
-                data: estadisticas
-            });
+            const pedidos = await this.pedidoModel.getAll(); // Obtiene pedidos
+            res.render('pedidos/index', { pedidos }); // Renderiza template con datos
         } catch (error) {
-            console.error('Error en getEstadisticas pedidos:', error);
-            // Maneja errores internos del servidor
-            res.status(500).json({
-                success: false,
-                message: 'Error al obtener estadísticas de pedidos',
-                error: error.message
-            });
+            console.error('Error al renderizar index de pedidos:', error); // Log
+            res.status(500).send('Error al cargar la página'); // Error simple
+        }
+    }
+
+    async renderNuevo(req, res) { // Renderiza nuevo.pug con lista de clientes
+        try {
+            const clientes = await this.clienteModel.getAll(); // Obtiene clientes
+            res.render('pedidos/nuevo', { clientes }); // Renderiza
+        } catch (error) {
+            console.error('Error al renderizar nuevo pedido:', error); // Log
+            res.status(500).send('Error al cargar la página');
+        }
+    }
+
+    async renderEditar(req, res) { // Renderiza editar.pug con pedido y clientes
+        try {
+            const { id } = req.params; // ID
+            const pedido = await this.pedidoModel.getById(id); // Obtiene pedido
+            const clientes = await this.clienteModel.getAll(); // Clientes
+            if (!pedido) { // No encontrado
+                return res.status(404).send('Pedido no encontrado'); // 404
+            }
+            res.render('pedidos/editar', { pedido, clientes }); // Renderiza
+        } catch (error) {
+            console.error('Error al renderizar editar pedido:', error); // Log
+            res.status(500).send('Error al cargar la página');
         }
     }
 }
 
-module.exports = PedidosController;
+export default PedidosController; // Exporta

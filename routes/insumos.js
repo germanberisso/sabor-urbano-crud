@@ -1,55 +1,58 @@
-// Importa módulos necesarios para rutas y controladores
-const express = require('express');
-const router = express.Router();
-const InsumosController = require('../controllers/insumosController');
-const validationMiddleware = require('../middleware/validation');
+import express from 'express'; // Express
+import InsumosController from '../controllers/insumosController.js'; // Controlador
+import ValidationMiddleware from '../middleware/validation.js'; // Validaciones
 
-// Instancia del controlador de insumos
-const insumosController = new InsumosController();
+const router = express.Router(); // Router insumos
+const insumosController = new InsumosController(); // Instancia
 
-// Middleware para validar campos específicos de insumos
-const validarInsumo = (req, res, next) => {
-    const { stock, stockMinimo } = req.body;
-    // Valida que stock sea un número no negativo si está presente
-    if (stock !== undefined && (isNaN(parseInt(stock)) || parseInt(stock) < 0)) {
+const validarInsumo = (req, res, next) => { // Middleware: valida para create/update insumos
+    const { nombre, categoria, stock, stockMinimo, unidadMedida, proveedor } = req.body; // Campos body
+
+    if (req.method === 'PUT' && Object.keys(req.body).length === 0) { // PUT vacío
+        return res.status(400).json({ success: false, message: 'Body vacío: envíe al menos un campo.' });
+    }
+    if (req.method === 'PUT') { // PUT sin campos válidos
+        const alguno = [nombre, categoria, stock, stockMinimo, unidadMedida, proveedor].some(f => f !== undefined);
+        if (!alguno) {
+            return res.status(400).json({ success: false, message: 'Incluya algún campo para actualizar.' });
+        }
+    }
+    if (categoria && !['alimentos', 'bebidas', 'limpieza', 'utensilios', 'otros'].includes(categoria)) { // Categoría inválida
         return res.status(400).json({
             success: false,
-            message: 'Stock debe ser un número mayor o igual a 0'
+            message: 'Categoría debe ser: alimentos, bebidas, limpieza, utensilios, otros'
         });
     }
-    // Valida que stockMinimo sea un número no negativo si está presente
-    if (stockMinimo !== undefined && (isNaN(parseInt(stockMinimo)) || parseInt(stockMinimo) < 0)) {
-        return res.status(400).json({
-            success: false,
-            message: 'Stock mínimo debe ser un número mayor o igual a 0'
-        });
-    }
-    // Continúa al siguiente middleware o controlador
-    next();
+    next(); // Continúa
 };
 
-// Rutas principales CRUD para insumos
-router.get('/', (req, res) => insumosController.getAll(req, res)); // Obtiene todos los insumos
-router.get('/bajo-stock', (req, res) => insumosController.getBajoStock(req, res)); // Obtiene insumos con stock bajo
-router.get('/alertas', (req, res) => insumosController.getAlertas(req, res)); // Obtiene alertas de stock bajo
-router.get('/categoria/:categoria', (req, res) => insumosController.getByCategoria(req, res)); // Filtra insumos por categoría
-router.get('/:id', (req, res) => insumosController.getById(req, res)); // Obtiene un insumo por ID
+// Listado general
+router.get('/', (req, res) => insumosController.getAll(req, res)); // GET /insumos: todos
+// Bajo stock
+router.get('/bajo-stock', (req, res) => insumosController.getBajoStock(req, res)); // GET /insumos/bajo-stock: bajos
+// Alertas
+router.get('/alertas', (req, res) => insumosController.getAlertas(req, res)); // GET /insumos/alertas: alertas
+// Por categoría
+router.get('/categoria/:categoria', (req, res) => insumosController.getByCategoria(req, res)); // GET /insumos/categoria/:cat: por cat
+// Detalle
+router.get('/:id', (req, res) => insumosController.getById(req, res)); // GET /insumos/:id: uno
 
-// Crea un nuevo insumo con validaciones
-router.post('/', 
-    validationMiddleware.validarCamposRequeridos(['nombre', 'categoria']), 
-    validarInsumo, 
-    (req, res) => insumosController.create(req, res)
+router.post('/',
+    ValidationMiddleware.validarCamposRequeridos(['nombre', 'categoria', 'stock', 'stockMinimo']), // Obligatorios
+    validarInsumo, // Específicos
+    (req, res) => insumosController.create(req, res) // POST /insumos: crea
 );
 
-// Rutas específicas para gestión de stock
-router.put('/:id/stock', (req, res) => insumosController.actualizarStock(req, res)); // Actualiza el stock de un insumo
-router.put('/:id/descontar', (req, res) => insumosController.descontarStock(req, res)); // Descuenta stock de un insumo
+router.put('/:id',
+    validarInsumo, // Valida
+    (req, res) => insumosController.update(req, res) // PUT /insumos/:id: actualiza general
+);
 
-// Actualiza un insumo existente con validaciones
-router.put('/:id', validarInsumo, (req, res) => insumosController.update(req, res));
+// Actualizar stock absoluto
+router.put('/:id/stock', (req, res) => insumosController.actualizarStock(req, res)); // PUT /insumos/:id/stock: stock nuevo
+// Descontar stock
+router.put('/:id/descontar', (req, res) => insumosController.descontarStock(req, res)); // PUT /insumos/:id/descontar: resta cantidad
 
-// Elimina un insumo
-router.delete('/:id', (req, res) => insumosController.delete(req, res));
+router.delete('/:id', (req, res) => insumosController.delete(req, res)); // DELETE /insumos/:id: elimina
 
-module.exports = router;
+export default router; // Exporta

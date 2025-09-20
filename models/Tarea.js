@@ -1,227 +1,181 @@
-// Importa módulos para manejo de archivos y rutas
-const fs = require('fs').promises;
-const path = require('path');
+import { promises as fs } from 'fs'; // I/O asíncrono
+import { join, dirname } from 'path'; // Rutas
+import { fileURLToPath } from 'url'; // Ruta actual
 
-// Clase para gestionar operaciones CRUD de tareas usando JSON
 class Tarea {
-    // Inicializa la ruta al archivo tareas.json
-    constructor() {
-        this.filePath = path.join(__dirname, '../data/tareas.json');
+    constructor() { // Inicializa ruta al JSON de tareas
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+        this.filePath = join(__dirname, '../data/tareas.json');
     }
 
-    // Lee todas las tareas desde el archivo JSON
-    async getAll() {
+    async getAll() { // Obtiene todas las tareas
         try {
-            const data = await fs.readFile(this.filePath, 'utf8');
-            const json = JSON.parse(data);
-            return json.tareas || [];
+            const data = await fs.readFile(this.filePath, 'utf8'); // Lee
+            const json = JSON.parse(data); // Parsea
+            return json.tareas || []; // Array o vacío
         } catch (error) {
-            console.error('Error al leer tareas:', error);
-            return [];
+            console.error('Error al leer tareas:', error); // Log
+            return []; // Vacío
         }
     }
 
-    // Obtiene una tarea por su ID
-    async getById(id) {
+    async saveAll(tareas) { // Guarda array de tareas
         try {
-            const tareas = await this.getAll();
-            return tareas.find(tarea => tarea.id === parseInt(id));
+            const data = { tareas }; // Objeto con array
+            await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf8'); // Escribe formateado
         } catch (error) {
-            console.error('Error al obtener tarea por ID:', error);
-            return null;
+            console.error('Error al guardar tareas:', error); // Log
+            throw error; // Relanza
         }
     }
 
-    // Filtra tareas por estado (pendiente, en_proceso, finalizada)
-    async getByEstado(estado) {
-        try {
-            const tareas = await this.getAll();
-            return tareas.filter(tarea => tarea.estado === estado);
-        } catch (error) {
-            console.error('Error al filtrar por estado:', error);
-            return [];
-        }
+    async getById(id) { // Obtiene tarea por ID
+        const tareas = await this.getAll(); // Todas
+        return tareas.find(t => t.id === parseInt(id)); // Encuentra o undefined
     }
 
-    // Filtra tareas por área (gestion_pedidos, control_inventario)
-    async getByArea(area) {
-        try {
-            const tareas = await this.getAll();
-            return tareas.filter(tarea => tarea.area === area);
-        } catch (error) {
-            console.error('Error al filtrar por área:', error);
-            return [];
+    async filtrar(filtros) { // Aplica filtros múltiples a las tareas
+        let tareas = await this.getAll(); // Todas inicial
+
+        if (filtros.estado) tareas = tareas.filter(t => t.estado === filtros.estado); // Filtra por estado
+        if (filtros.prioridad) tareas = tareas.filter(t => t.prioridad === filtros.prioridad); // Por prioridad
+        if (filtros.area) tareas = tareas.filter(t => t.area === filtros.area); // Por área
+        if (filtros.empleadoAsignado) tareas = tareas.filter(t => t.empleadoAsignado === parseInt(filtros.empleadoAsignado)); // Por empleado (entero)
+
+        // Fechas creación
+        if (filtros.fechaDesde) { // Desde fecha creación
+            tareas = tareas.filter(t => new Date(t.fechaCreacion) >= new Date(filtros.fechaDesde));
         }
+        if (filtros.fechaHasta) { // Hasta fecha creación
+            tareas = tareas.filter(t => new Date(t.fechaCreacion) <= new Date(filtros.fechaHasta));
+        }
+
+        // Fechas de inicio
+        if (filtros.fechaInicioDesde) { // Desde fecha inicio (si existe)
+            tareas = tareas.filter(t => t.fechaInicio && new Date(t.fechaInicio) >= new Date(filtros.fechaInicioDesde));
+        }
+        if (filtros.fechaInicioHasta) {
+            tareas = tareas.filter(t => t.fechaInicio && new Date(t.fechaInicio) <= new Date(filtros.fechaInicioHasta));
+        }
+
+        // Fechas de finalización
+        if (filtros.fechaFinDesde) {
+            tareas = tareas.filter(t => t.fechaFinalizacion && new Date(t.fechaFinalizacion) >= new Date(filtros.fechaFinDesde));
+        }
+        if (filtros.fechaFinHasta) {
+            tareas = tareas.filter(t => t.fechaFinalizacion && new Date(t.fechaFinalizacion) <= new Date(filtros.fechaFinHasta));
+        }
+
+        // Filtro por tipoPedido/plataforma a través del pedido asociado
+        if ((filtros.tipoPedido && filtros.tipoPedido !== 'todos') || filtros.plataforma) { // Si hay filtro de pedido
+            const { default: PedidoModel } = await import('./Pedido.js'); // Importa dinámico Pedido
+            const pedidoModel = new PedidoModel(); // Instancia
+            const pedidos = await pedidoModel.getAll(); // Todos pedidos
+            let pedidosFiltrados = pedidos; // Inicial
+
+            if (filtros.tipoPedido && filtros.tipoPedido !== 'todos') { // Filtra tipo
+                pedidosFiltrados = pedidosFiltrados.filter(p => p.tipo === filtros.tipoPedido);
+            }
+            if (filtros.plataforma) { // Filtra plataforma
+                pedidosFiltrados = pedidosFiltrados.filter(p => p.plataforma === filtros.plataforma);
+            }
+
+            const pedidosIds = new Set(pedidosFiltrados.map(p => p.id)); // Set de IDs filtrados
+            tareas = tareas.filter(t => // Filtra tareas asociadas a esos pedidos o sin asociación
+                t.pedidoAsociado === null ||
+                pedidosIds.has(t.pedidoAsociado)
+            );
+        }
+
+        return tareas; // Retorna filtradas
     }
 
-    // Filtra tareas por empleado asignado
-    async getByEmpleado(empleadoId) {
-        try {
-            const tareas = await this.getAll();
-            return tareas.filter(tarea => tarea.empleadoAsignado === parseInt(empleadoId));
-        } catch (error) {
-            console.error('Error al filtrar por empleado:', error);
-            return [];
-        }
+    async create(datos) { // Crea nueva tarea
+        const tareas = await this.getAll(); // Todas
+        const nuevoId = tareas.length > 0 ? Math.max(...tareas.map(t => t.id)) + 1 : 1; // Nuevo ID
+
+        const tarea = { // Objeto nuevo
+            id: nuevoId,
+            titulo: datos.titulo, // Título requerido
+            descripcion: datos.descripcion || '', // Descripción opcional
+            area: datos.area, // Área
+            estado: datos.estado || 'pendiente', // Estado default pendiente
+            prioridad: datos.prioridad || 'media', // Prioridad default media
+            empleadoAsignado: datos.empleadoAsignado ? parseInt(datos.empleadoAsignado) : null, // Empleado opcional
+            pedidoAsociado: datos.pedidoAsociado ? parseInt(datos.pedidoAsociado) : null, // Pedido opcional
+            observaciones: datos.observaciones || '', // Observaciones
+            fechaCreacion: new Date().toISOString(), // Fecha creación
+            fechaInicio: null, // Inicial null
+            fechaFinalizacion: null // Inicial null
+        };
+
+        tareas.push(tarea); // Agrega
+        await this.saveAll(tareas); // Guarda
+        return tarea; // Retorna
     }
 
-    // Filtra tareas usando múltiples criterios
-    async filtrar(filtros) {
-        try {
-            let tareas = await this.getAll();
-            // Filtra por estado si se proporciona
-            if (filtros.estado) {
-                tareas = tareas.filter(tarea => tarea.estado === filtros.estado);
-            }
-            // Filtra por prioridad si se proporciona
-            if (filtros.prioridad) {
-                tareas = tareas.filter(tarea => tarea.prioridad === filtros.prioridad);
-            }
-            // Filtra por área si se proporciona
-            if (filtros.area) {
-                tareas = tareas.filter(tarea => tarea.area === filtros.area);
-            }
-            // Filtra por empleado asignado si se proporciona
-            if (filtros.empleadoAsignado) {
-                tareas = tareas.filter(tarea => tarea.empleadoAsignado === parseInt(filtros.empleadoAsignado));
-            }
-            // Filtra por fecha de creación (rango desde)
-            if (filtros.fechaDesde) {
-                tareas = tareas.filter(tarea => new Date(tarea.fechaCreacion) >= new Date(filtros.fechaDesde));
-            }
-            // Filtra por fecha de creación (rango hasta)
-            if (filtros.fechaHasta) {
-                tareas = tareas.filter(tarea => new Date(tarea.fechaCreacion) <= new Date(filtros.fechaHasta));
-            }
-            // Filtra por tipo de pedido si está relacionado
-            if (filtros.tipoPedido && filtros.tipoPedido !== 'todos') {
-                const PedidoModel = require('./Pedido');
-                const pedidoModel = new PedidoModel();
-                const pedidos = await pedidoModel.getAll();
-                const pedidosFiltrados = pedidos.filter(pedido => pedido.tipo === filtros.tipoPedido);
-                const pedidosIds = pedidosFiltrados.map(p => p.id);
-                tareas = tareas.filter(tarea => 
-                    tarea.pedidoAsociado === null || pedidosIds.includes(tarea.pedidoAsociado)
-                );
-            }
-            return tareas;
-        } catch (error) {
-            console.error('Error al filtrar tareas:', error);
-            return [];
-        }
+    async update(id, datos) { // Actualiza tarea por ID
+        const tareas = await this.getAll(); // Todas
+        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
+        if (index === -1) throw new Error('Tarea no encontrada'); // Error si no
+
+        tareas[index] = { // Actualiza fusionando con campos limpios
+            ...tareas[index],
+            ...this._limpiarCamposActualizacion(datos) // Usa método privado para limpiar
+        };
+        await this.saveAll(tareas); // Guarda
+        return tareas[index]; // Retorna actualizada
     }
 
-    // Crea una nueva tarea con valores por defecto
-    async create(nuevaTarea) {
-        try {
-            const tareas = await this.getAll();
-            // Genera un nuevo ID incremental
-            const nuevoId = tareas.length > 0 ? Math.max(...tareas.map(t => t.id)) + 1 : 1;
-            // Crea el objeto tarea con valores por defecto
-            const tarea = {
-                id: nuevoId,
-                titulo: nuevaTarea.titulo,
-                descripcion: nuevaTarea.descripcion,
-                area: nuevaTarea.area, // gestion_pedidos o control_inventario
-                estado: 'pendiente', // pendiente, en_proceso, finalizada
-                prioridad: nuevaTarea.prioridad || 'media', // alta, media, baja
-                empleadoAsignado: parseInt(nuevaTarea.empleadoAsignado) || null,
-                pedidoAsociado: parseInt(nuevaTarea.pedidoAsociado) || null,
-                fechaCreacion: new Date().toISOString(),
-                fechaInicio: null,
-                fechaFinalizacion: null,
-                observaciones: nuevaTarea.observaciones || ''
-            };
-            tareas.push(tarea);
-            // Guarda los cambios en el archivo JSON
-            await this.saveAll(tareas);
-            return tarea;
-        } catch (error) {
-            console.error('Error al crear tarea:', error);
-            throw error;
-        }
-    }
-
-    // Actualiza una tarea existente
-    async update(id, datosActualizados) {
-        try {
-            const tareas = await this.getAll();
-            const index = tareas.findIndex(tarea => tarea.id === parseInt(id));
-            // Verifica si la tarea existe
-            if (index === -1) {
-                throw new Error('Tarea no encontrada');
-            }
-            // Actualiza fechaInicio si la tarea pasa a en_proceso
-            if (datosActualizados.estado === 'en_proceso' && !tareas[index].fechaInicio) {
-                datosActualizados.fechaInicio = new Date().toISOString();
-            }
-            // Actualiza fechaFinalizacion si la tarea pasa a finalizada
-            if (datosActualizados.estado === 'finalizada' && !tareas[index].fechaFinalizacion) {
-                datosActualizados.fechaFinalizacion = new Date().toISOString();
-            }
-            // Actualiza los datos de la tarea
-            tareas[index] = { ...tareas[index], ...datosActualizados };
-            await this.saveAll(tareas);
-            return tareas[index];
-        } catch (error) {
-            console.error('Error al actualizar tarea:', error);
-            throw error;
-        }
-    }
-
-    // Elimina una tarea
-    async delete(id) {
-        try {
-            const tareas = await this.getAll();
-            const tareasFiltradas = tareas.filter(tarea => tarea.id !== parseInt(id));
-            // Verifica si la tarea existía
-            if (tareas.length === tareasFiltradas.length) {
-                throw new Error('Tarea no encontrada');
-            }
-            // Guarda los cambios en el archivo JSON
-            await this.saveAll(tareasFiltradas);
-            return true;
-        } catch (error) {
-            console.error('Error al eliminar tarea:', error);
-            throw error;
-        }
-    }
-
-    // Calcula estadísticas de tareas por área
-    async getEstadisticasPorArea() {
-        try {
-            const tareas = await this.getAll();
-            // Genera estadísticas agrupadas por área y estado
-            return {
-                gestion_pedidos: {
-                    total: tareas.filter(t => t.area === 'gestion_pedidos').length,
-                    pendientes: tareas.filter(t => t.area === 'gestion_pedidos' && t.estado === 'pendiente').length,
-                    en_proceso: tareas.filter(t => t.area === 'gestion_pedidos' && t.estado === 'en_proceso').length,
-                    finalizadas: tareas.filter(t => t.area === 'gestion_pedidos' && t.estado === 'finalizada').length
-                },
-                control_inventario: {
-                    total: tareas.filter(t => t.area === 'control_inventario').length,
-                    pendientes: tareas.filter(t => t.area === 'control_inventario' && t.estado === 'pendiente').length,
-                    en_proceso: tareas.filter(t => t.area === 'control_inventario' && t.estado === 'en_proceso').length,
-                    finalizadas: tareas.filter(t => t.area === 'control_inventario' && t.estado === 'finalizada').length
+    _limpiarCamposActualizacion(datos) { // Privado: filtra solo campos permitidos para update
+        const permitidos = ['titulo', 'descripcion', 'area', 'estado', 'prioridad', 'empleadoAsignado', 'pedidoAsociado', 'observaciones']; // Lista permitida
+        const limpio = {}; // Objeto resultante
+        for (const k of permitidos) { // Para cada campo
+            if (datos[k] !== undefined) { // Si se proporciona
+                if (['empleadoAsignado', 'pedidoAsociado'].includes(k) && datos[k] !== null) { // Si es ID y no null
+                    limpio[k] = parseInt(datos[k]); // Convierte a entero
+                } else {
+                    limpio[k] = datos[k]; // Copia directo
                 }
-            };
-        } catch (error) {
-            console.error('Error al obtener estadísticas por área:', error);
-            return {};
+            }
         }
+        return limpio; // Retorna limpio
     }
 
-    // Guarda todas las tareas en el archivo JSON
-    async saveAll(tareas) {
-        try {
-            const data = JSON.stringify({ tareas }, null, 2);
-            await fs.writeFile(this.filePath, data, 'utf8');
-        } catch (error) {
-            console.error('Error al guardar tareas:', error);
-            throw error;
+    async iniciar(id) { // Inicia tarea (setea fecha inicio y estado en_proceso)
+        const tareas = await this.getAll(); // Todas
+        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
+        if (index === -1) throw new Error('Tarea no encontrada'); // Error
+        if (!tareas[index].fechaInicio) { // Si no tiene fecha inicio
+            tareas[index].fechaInicio = new Date().toISOString(); // Setea ahora
         }
+        tareas[index].estado = 'en_proceso'; // Cambia estado
+        await this.saveAll(tareas); // Guarda
+        return tareas[index]; // Retorna
+    }
+
+    async finalizar(id) { // Finaliza tarea (setea fecha fin y estado finalizada)
+        const tareas = await this.getAll(); // Todas
+        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
+        if (index === -1) throw new Error('Tarea no encontrada'); // Error
+        if (!tareas[index].fechaInicio) { // Fallback si no inició
+            tareas[index].fechaInicio = new Date().toISOString();
+        }
+        tareas[index].fechaFinalizacion = new Date().toISOString(); // Setea fin
+        tareas[index].estado = 'finalizada'; // Estado final
+        await this.saveAll(tareas); // Guarda
+        return tareas[index]; // Retorna
+    }
+
+    async delete(id) { // Elimina tarea por ID
+        const tareas = await this.getAll(); // Todas
+        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
+        if (index === -1) throw new Error('Tarea no encontrada'); // Error
+        const eliminada = tareas.splice(index, 1)[0]; // Elimina y guarda referencia
+        await this.saveAll(tareas); // Guarda
+        return eliminada; // Retorna eliminada
     }
 }
 
-module.exports = Tarea;
+export default Tarea; // Exporta
