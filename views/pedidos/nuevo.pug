@@ -2,86 +2,161 @@ extends ../layout
 
 block content
   - var page = 'pedidos'
-  
+
   .row.mb-4
     .col-12
       h1.display-6
-        i.fas.fa-plus.text-info.me-3
+        i.fas.fa-shopping-bag.text-success.me-3
         | Nuevo Pedido
 
-  .row
-    .col-lg-6
-      .card
-        .card-body
-          form#pedidoForm(action="/pedidos/nuevo", method="POST")
-            .mb-3
-              label.form-label(for="clienteId") Cliente
-              select.form-control(id="clienteId", name="clienteId", required)
-                option(value="") Seleccione un cliente
-                each cliente in clientes
-                  option(value=cliente.id)= `${cliente.nombre} ${cliente.apellido}`
-            .mb-3
-              label.form-label(for="itemsText") Ítems (ej: "2 hamburguesas" o "1 pizza, 2 gaseosas")
-              textarea.form-control(id="itemsText", name="itemsText", rows="4", required, placeholder="Escribe los ítems, ej: 2 hamburguesas")
-            .mb-3
-              label.form-label(for="total") Total
-              input.form-control(type="number", id="total", name="total", required)
-            .mb-3
-              label.form-label(for="tipo") Tipo
-              select.form-control(id="tipo", name="tipo", required)
-                option(value="presencial") Presencial
-                option(value="delivery") Delivery
-            .mb-3
-              label.form-label(for="plataforma") Plataforma
-              select.form-control(id="plataforma", name="plataforma", required)
-                option(value="rappi") Rappi
-                option(value="pedidosya") PedidosYa
-                option(value="propia") Propia
-                option(value="local") Local
-            .mb-3
-              label.form-label(for="estado") Estado
-              select.form-control(id="estado", name="estado", required)
-                option(value="pendiente") Pendiente
-                option(value="en_preparacion") En Preparación
-                option(value="listo") Listo
-                option(value="en_camino") En Camino
-                option(value="entregado") Entregado
-                option(value="finalizado") Finalizado
-            .mb-3
-              label.form-label(for="tiempoEstimado") Tiempo Estimado (minutos)
-              input.form-control(type="number", id="tiempoEstimado", name="tiempoEstimado")
-            .mb-3
-              label.form-label(for="observaciones") Observaciones
-              textarea.form-control(id="observaciones", name="observaciones", rows="4")
-            .d-grid
-              button.btn.btn-info(type="submit")
-                i.fas.fa-save.me-2
-                | Crear Pedido
-      a.btn.btn-outline-secondary.mt-3(href="/pedidos")
-        i.fas.fa-arrow-left.me-2
-        | Volver
-    script.
-      document.getElementById('pedidoForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
-        console.log('Datos enviados:', data); // Depuración
-        fetch('/pedidos/nuevo', {
+  form#pedidoForm
+    // ------------------- TIPO DE PEDIDO -------------------
+    .form-group.mb-3
+      label(for="tipo") Tipo de Pedido
+      select#tipo.form-control(name="tipo" required)
+        option(value="presencial" selected) Presencial
+        option(value="delivery") Delivery
+
+    // ------------------- PLATAFORMA -------------------
+    .form-group.mb-3
+      label(for="plataforma") Plataforma
+      select#plataforma.form-control(name="plataforma" required)
+        option(value="propia") Propia
+        option(value="rappi") Rappi
+        option(value="pedidosya") PedidosYa
+        option(value="local") Local
+
+    // ------------------- CAMPOS DE CLIENTE -------------------
+    div#deliveryFields(style="display:none;")
+      .form-group.mb-3
+        label(for="nombreCliente") Nombre Cliente
+        input.form-control(type="text" name="nombreCliente")
+      .form-group.mb-3
+        label(for="telefonoCliente") Teléfono Cliente
+        input.form-control(type="text" name="telefonoCliente")
+      .form-group.mb-3
+        label(for="direccionCliente") Dirección Cliente
+        input.form-control(type="text" name="direccionCliente")
+
+    // ------------------- ITEMS DEL PEDIDO -------------------
+    .form-group.mb-3
+      label Items del Pedido
+      each producto in productos
+        .mb-2.d-flex.align-items-center
+          input.form-check-input.item-checkbox(type="checkbox" data-id=producto.id data-precio=producto.precio id=`producto${producto.id}`)
+          label.form-check-label.ms-2(for=`producto${producto.id}`) #{producto.nombre} - $#{producto.precio}
+          input.form-control.item-cantidad.ms-2(type="number" min="1" value="1" data-id=producto.id style="width:80px;" disabled)
+
+    // ------------------- TOTAL -------------------
+    .form-group.mb-3
+      label(for="total") Total
+      input#total.form-control(type="number" name="total" readonly)
+
+    button.btn.btn-success(type="submit") Crear Pedido
+
+  // ------------------- SCRIPT -------------------
+  script.
+    const pedidoForm = document.getElementById('pedidoForm');
+    const tipoSelect = document.getElementById('tipo');
+    const plataformaSelect = document.getElementById('plataforma');
+    const deliveryFields = document.getElementById('deliveryFields');
+    const checkboxes = document.querySelectorAll('.item-checkbox');
+    const cantidades = document.querySelectorAll('.item-cantidad');
+    const totalInput = document.getElementById('total');
+
+    // ------------------- ACTUALIZAR PLATAFORMA Y CAMPOS DELIVERY -------------------
+    function actualizarFormulario() {
+      const tipo = tipoSelect.value;
+      const opciones = plataformaSelect.options;
+      for (let i = 0; i < opciones.length; i++) {
+        const opcion = opciones[i];
+        if (tipo === 'presencial') {
+          opcion.disabled = opcion.value !== 'local';
+          if (opcion.value === 'local') opcion.selected = true;
+        } else {
+          opcion.disabled = opcion.value === 'local';
+          if (!opcion.disabled && !opcion.selected) opcion.selected = true;
+        }
+      }
+      deliveryFields.style.display = tipo === 'delivery' ? 'block' : 'none';
+    }
+
+    tipoSelect.addEventListener('change', actualizarFormulario);
+    actualizarFormulario();
+
+    // ------------------- HABILITAR CANTIDADES Y CALCULAR TOTAL -------------------
+    function calcularTotal() {
+      let total = 0;
+      checkboxes.forEach(cb => {
+        const id = cb.dataset.id;
+        const cantidadInput = document.querySelector(`.item-cantidad[data-id="${id}"]`);
+        if (cb.checked) {
+          const cantidad = parseInt(cantidadInput.value) || 1;
+          const precio = parseFloat(cb.dataset.precio);
+          total += cantidad * precio;
+        }
+      });
+      totalInput.value = total;
+    }
+
+    checkboxes.forEach(cb => {
+      const id = cb.dataset.id;
+      const cantidadInput = document.querySelector(`.item-cantidad[data-id="${id}"]`);
+      cb.addEventListener('change', () => {
+        cantidadInput.disabled = !cb.checked;
+        if (!cb.checked) cantidadInput.value = 1;
+        calcularTotal();
+      });
+    });
+
+    cantidades.forEach(input => {
+      input.addEventListener('input', calcularTotal);
+    });
+
+    calcularTotal();
+
+    // ------------------- SUBMIT -------------------
+    pedidoForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const items = {};
+      checkboxes.forEach(cb => {
+        if (cb.checked) {
+          const id = cb.dataset.id;
+          const cantidad = parseInt(document.querySelector(`.item-cantidad[data-id="${id}"]`).value) || 1;
+          items[id] = { seleccionado: true, cantidad };
+        }
+      });
+
+      if (Object.keys(items).length === 0) {
+        alert('Debe seleccionar al menos un producto');
+        return;
+      }
+
+      const data = {
+        tipo: tipoSelect.value,
+        plataforma: plataformaSelect.value,
+        items,
+        nombreCliente: pedidoForm.nombreCliente?.value || '',
+        telefonoCliente: pedidoForm.telefonoCliente?.value || '',
+        direccionCliente: pedidoForm.direccionCliente?.value || '',
+        total: parseFloat(totalInput.value)
+      };
+
+      try {
+        const res = await fetch('/pedidos/nuevo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            alert('Pedido creado exitosamente');
-            window.location.href = '/pedidos';
-          } else {
-            alert(`Error: ${result.message}`);
-          }
-        })
-        .catch(error => {
-          console.error('Error en fetch:', error);
-          alert('Error al crear el pedido');
         });
-      });
+        const result = await res.json();
+        if (result.success) {
+          alert('Pedido creado exitosamente');
+          window.location.href = '/pedidos';
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error al crear el pedido');
+      }
+    });

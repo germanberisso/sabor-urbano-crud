@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   - var page = 'pedidos'
-  
+
   .row.mb-4
     .col-12
       h1.display-6
@@ -10,78 +10,232 @@ block content
         | Editar Pedido #{pedido.numeroOrden}
 
   .row
-    .col-lg-6
+    .col-lg-8
       .card
         .card-body
-          form#pedidoForm(action=`/pedidos/editar/${pedido.id}`, method="POST")
-            .mb-3
-              label.form-label(for="clienteId") Cliente
-              select.form-control(id="clienteId", name="clienteId", required)
-                option(value="") Seleccione un cliente
-                each cliente in clientes
-                  option(value=cliente.id, selected=(cliente.id === pedido.clienteId))= `${cliente.nombre} ${cliente.apellido}`
-            .mb-3
-              label.form-label(for="itemsText") Ítems (ej: "2 hamburguesas" o "1 pizza, 2 gaseosas")
-              textarea.form-control(id="itemsText", name="itemsText", rows="4", required, placeholder="Escribe los ítems, ej: 2 hamburguesas") #{pedido.items.map(item => `${item.cantidad} ${item.producto}`).join(', ')}
-            .mb-3
-              label.form-label(for="total") Total
-              input.form-control(type="number", id="total", name="total", value=pedido.total, required)
-            .mb-3
-              label.form-label(for="tipo") Tipo
-              select.form-control(id="tipo", name="tipo", required)
-                option(value="presencial", selected=(pedido.tipo === 'presencial')) Presencial
-                option(value="delivery", selected=(pedido.tipo === 'delivery')) Delivery
-            .mb-3
-              label.form-label(for="plataforma") Plataforma
-              select.form-control(id="plataforma", name="plataforma", required)
-                option(value="rappi", selected=(pedido.plataforma === 'rappi')) Rappi
-                option(value="pedidosya", selected=(pedido.plataforma === 'pedidosya')) PedidosYa
-                option(value="propia", selected=(pedido.plataforma === 'propia')) Propia
-                option(value="local", selected=(pedido.plataforma === 'local')) Local
-            .mb-3
-              label.form-label(for="estado") Estado
-              select.form-control(id="estado", name="estado", required)
-                option(value="pendiente", selected=(pedido.estado === 'pendiente')) Pendiente
-                option(value="en_preparacion", selected=(pedido.estado === 'en_preparacion')) En Preparación
-                option(value="listo", selected=(pedido.estado === 'listo')) Listo
-                option(value="en_camino", selected=(pedido.estado === 'en_camino')) En Camino
-                option(value="entregado", selected=(pedido.estado === 'entregado')) Entregado
-                option(value="finalizado", selected=(pedido.estado === 'finalizado')) Finalizado
-            .mb-3
-              label.form-label(for="tiempoEstimado") Tiempo Estimado (minutos)
-              input.form-control(type="number", id="tiempoEstimado", name="tiempoEstimado", value=pedido.tiempoEstimado || '')
-            .mb-3
-              label.form-label(for="observaciones") Observaciones
-              textarea.form-control(id="observaciones", name="observaciones", rows="4") #{pedido.observaciones}
-            .d-grid
-              button.btn.btn-info(type="submit")
-                i.fas.fa-save.me-2
-                | Actualizar Pedido
+          // ------------------- CAMPOS INICIALES -------------------
+          - var nombreCliente = pedido.nombreCliente || (pedido.cliente && pedido.cliente.nombre) || ''
+          - var telefonoCliente = pedido.telefonoCliente || (pedido.cliente && pedido.cliente.telefono) || ''
+          - var direccionCliente = pedido.direccionCliente || (pedido.cliente && pedido.cliente.direccion) || ''
+
+          // data-pedido-id para usar en el submit
+          form#pedidoForm(data-pedido-id=pedido.id)
+            // ------------------- TIPO DE PEDIDO -------------------
+            .form-group.mb-3
+              label(for="tipo") Tipo de Pedido
+              select#tipo.form-control(name="tipo" required)
+                option(value="presencial", selected=(pedido.tipo==='presencial')) Presencial
+                option(value="delivery", selected=(pedido.tipo==='delivery')) Delivery
+
+            // ------------------- PLATAFORMA -------------------
+            .form-group.mb-3
+              label(for="plataforma") Plataforma
+              select#plataforma.form-control(name="plataforma" required)
+                option(value="propia", selected=(pedido.plataforma==='propia')) Propia
+                option(value="rappi", selected=(pedido.plataforma==='rappi')) Rappi
+                option(value="pedidosya", selected=(pedido.plataforma==='pedidosya')) PedidosYa
+                option(value="local", selected=(pedido.plataforma==='local')) Local
+
+            // ------------------- CAMPOS DELIVERY -------------------
+            // Se muestran solo si tipo = delivery
+            div#deliveryFields(style=(pedido.tipo==='delivery' ? 'block' : 'none'))
+              .form-group.mb-3
+                label(for="nombreCliente") Nombre Cliente
+                input.form-control(type="text" name="nombreCliente" value=nombreCliente)
+              .form-group.mb-3
+                label(for="telefonoCliente") Teléfono Cliente
+                input.form-control(type="text" name="telefonoCliente" value=telefonoCliente)
+              .form-group.mb-3
+                label(for="direccionCliente") Dirección Cliente
+                input.form-control(type="text" name="direccionCliente" value=direccionCliente)
+
+            // ------------------- ITEMS DEL PEDIDO -------------------
+            .form-group.mb-3
+              label Items del Pedido
+              - var itemsPedido = Array.isArray(pedido.items) ? pedido.items : []
+              each producto in productos
+                - var match = itemsPedido.find(i => i && i.id === producto.id)
+                - var seleccionado = !!match
+                - var cantidad = match ? match.cantidad : 1
+                .mb-2.d-flex.align-items-center
+                  input.form-check-input.item-checkbox(
+                    type="checkbox"
+                    data-id=producto.id
+                    data-precio=producto.precio
+                    id=`producto${producto.id}`
+                    checked=seleccionado
+                  )
+                  label.form-check-label.ms-2(for=`producto${producto.id}`) #{producto.nombre} - $#{producto.precio}
+                  input.form-control.item-cantidad.ms-2(
+                    type="number"
+                    min="1"
+                    value=cantidad
+                    data-id=producto.id
+                    style="width:80px;"
+                    disabled=!seleccionado
+                  )
+
+            // ------------------- CAMPOS EXTRA (si ya los usás en editar) -------------------
+            .form-group.mb-3
+              label(for="estado") Estado
+              select#estado.form-control(name="estado" required)
+                option(value="pendiente", selected=(pedido.estado==='pendiente')) Pendiente
+                option(value="en_preparacion", selected=(pedido.estado==='en_preparacion')) En Preparación
+                option(value="listo", selected=(pedido.estado==='listo')) Listo
+                option(value="en_camino", selected=(pedido.estado==='en_camino')) En Camino
+                option(value="entregado", selected=(pedido.estado==='entregado')) Entregado
+                option(value="finalizado", selected=(pedido.estado==='finalizado')) Finalizado
+
+            .form-group.mb-3
+              label(for="tiempoEstimado") Tiempo Estimado (minutos)
+              input#tiempoEstimado.form-control(type="number" name="tiempoEstimado" value=pedido.tiempoEstimado || '')
+
+            .form-group.mb-3
+              label(for="observaciones") Observaciones
+              textarea#observaciones.form-control(name="observaciones" rows="3")= pedido.observaciones || ''
+
+            // ------------------- TOTAL -------------------
+            .form-group
+              label(for="total") Total
+              input#total.form-control(type="number" name="total" readonly value=pedido.total || 0)
+
+            button.btn.btn-info.mt-3(type="submit")
+              i.fas.fa-save.me-2
+              | Actualizar Pedido
+
       a.btn.btn-outline-secondary.mt-3(href="/pedidos")
         i.fas.fa-arrow-left.me-2
         | Volver
-    script.
-      document.getElementById('pedidoForm').addEventListener('submit', (e) => {
+
+  // ------------------- SCRIPT -------------------
+  script.
+    (function () {
+      const pedidoForm = document.getElementById('pedidoForm');
+      const pedidoId = pedidoForm?.dataset?.pedidoId;
+
+      const tipoSelect = document.getElementById('tipo');
+      const plataformaSelect = document.getElementById('plataforma');
+      const deliveryFields = document.getElementById('deliveryFields');
+
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      const totalInput = document.getElementById('total');
+
+      function actualizarFormulario() {
+        const tipo = tipoSelect.value;
+        const opciones = plataformaSelect.options;
+
+        for (let i = 0; i < opciones.length; i++) {
+          const opcion = opciones[i];
+          if (tipo === 'presencial') {
+            opcion.disabled = opcion.value !== 'local';
+            if (opcion.value === 'local') opcion.selected = true;
+          } else {
+            opcion.disabled = opcion.value === 'local';
+            // si quedó "local" seleccionado al pasar a delivery, forzamos "propia"
+            if (opcion.value === 'propia' && !opcion.disabled && plataformaSelect.value === 'local') {
+              opcion.selected = true;
+            }
+          }
+        }
+        deliveryFields.style.display = tipo === 'delivery' ? 'block' : 'none';
+      }
+
+      tipoSelect.addEventListener('change', actualizarFormulario);
+      actualizarFormulario();
+
+      function cantidadInputFor(id) {
+        return pedidoForm.querySelector(`.item-cantidad[data-id="${id}"]`);
+      }
+
+      function calcularTotal() {
+        let total = 0;
+        checkboxes.forEach(cb => {
+          const id = cb.dataset.id;
+          const precio = parseFloat(cb.dataset.precio) || 0;
+          const qtyInput = cantidadInputFor(id);
+          if (cb.checked) {
+            const cant = Math.max(1, parseInt(qtyInput.value, 10) || 1);
+            total += cant * precio;
+          }
+        });
+        totalInput.value = total;
+      }
+
+      // listeners de checkboxes/cantidades
+      checkboxes.forEach(cb => {
+        const id = cb.dataset.id;
+        const qtyInput = cantidadInputFor(id);
+        cb.addEventListener('change', () => {
+          qtyInput.disabled = !cb.checked;
+          if (!cb.checked) qtyInput.value = 1;
+          calcularTotal();
+        });
+        qtyInput?.addEventListener('input', calcularTotal);
+      });
+
+      // cálculo inicial (con lo preseleccionado)
+      calcularTotal();
+
+      // Submit => POST a /pedidos/editar/:id (igual estilo que "nuevo")
+      pedidoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
-        console.log('Datos enviados:', data); // Depuración
-        fetch(`/pedidos/editar/${e.target.action.split('/').pop()}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
+
+        // armar items como JSON
+        const items = {};
+        checkboxes.forEach(cb => {
+          if (cb.checked) {
+            const id = cb.dataset.id;
+            const qty = Math.max(1, parseInt(cantidadInputFor(id).value, 10) || 1);
+            items[id] = { seleccionado: true, cantidad: qty };
+          }
+        });
+
+        if (Object.keys(items).length === 0) {
+          alert('Debe seleccionar al menos un producto');
+          return;
+        }
+
+        // campos base
+        const data = {
+          tipo: tipoSelect.value,
+          plataforma: plataformaSelect.value,
+          items,
+          // estos campos extra están en el form de editar
+          estado: document.getElementById('estado')?.value || undefined,
+          tiempoEstimado: (() => {
+            const v = document.getElementById('tiempoEstimado')?.value;
+            return v ? Number(v) : undefined;
+          })(),
+          observaciones: document.getElementById('observaciones')?.value || ''
+        };
+
+        // datos de cliente si delivery
+        if (data.tipo === 'delivery') {
+          data.nombreCliente = pedidoForm.nombreCliente?.value || '';
+          data.telefonoCliente = pedidoForm.telefonoCliente?.value || '';
+          data.direccionCliente = pedidoForm.direccionCliente?.value || '';
+        }
+
+        // (opcional) total solo display; el backend recalcula, pero lo mandamos por si lo usás
+        const t = parseFloat(totalInput.value);
+        if (!Number.isNaN(t)) data.total = t;
+
+        try {
+          const res = await fetch(`/pedidos/editar/${pedidoId}`, {
+            method: 'POST', // paralelo a "nuevo" que usa POST
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          });
+          const result = await res.json();
           if (result.success) {
             alert('Pedido actualizado exitosamente');
             window.location.href = '/pedidos';
           } else {
             alert(`Error: ${result.message}`);
           }
-        })
-        .catch(error => {
-          console.error('Error en fetch:', error);
+        } catch (err) {
+          console.error(err);
           alert('Error al actualizar el pedido');
-        });
+        }
       });
+    })();

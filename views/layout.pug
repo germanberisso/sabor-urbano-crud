@@ -50,6 +50,10 @@ html(lang="es")
                 i.fas.fa-boxes.me-1
                 | Insumos
             li.nav-item
+              a.nav-link(href="/productos", class= page === 'productos' ? 'active' : '')
+                i.fas.fa-utensils.me-1
+                | Productos
+            li.nav-item
               a.nav-link(href="/filtros", class= page === 'filtros' ? 'active' : '')
                 i.fas.fa-filter.me-1
                 | Filtros
