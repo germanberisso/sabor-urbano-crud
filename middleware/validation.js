@@ -1,42 +1,47 @@
-class ValidationMiddleware { // Clase con métodos estáticos para middlewares de validación
-    static validarCamposRequeridos(camposRequeridos) { // Middleware: valida campos obligatorios en body
-        return (req, res, next) => { // Retorna función middleware
-            const camposFaltantes = []; // Array para faltantes
-            for (const campo of camposRequeridos) { // Para cada campo requerido
-                if (!req.body[campo] || req.body[campo].toString().trim() === "") { // Si vacío o no existe
-                    camposFaltantes.push(campo); // Agrega
+import mongoose from 'mongoose';
+
+class ValidationMiddleware {
+    // Valida campos obligatorios en body
+    static validarCamposRequeridos(camposRequeridos) {
+        return (req, res, next) => {
+            const camposFaltantes = [];
+            for (const campo of camposRequeridos) {
+                if (!req.body[campo] || req.body[campo].toString().trim() === "") {
+                    camposFaltantes.push(campo);
                 }
             }
-            if (camposFaltantes.length > 0) { // Si hay faltantes
-                return res.status(400).json({ // 400 con lista
+            if (camposFaltantes.length > 0) {
+                return res.status(400).json({
                     success: false,
                     message: `Campos requeridos faltantes: ${camposFaltantes.join(", ")}`,
-                    camposFaltantes: camposFaltantes, // Detalle extra
+                    camposFaltantes,
                 });
             }
-            next(); // Continúa si OK
+            next();
         };
     }
 
-    static validarEmail(req, res, next) { // Middleware: valida formato de email en body
-        const { email } = req.body; // Extrae email
-        if (email) { // Si presente
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex básico
-            if (!emailRegex.test(email)) { // No válido
-                return res.status(400).json({ // 400
+    // Valida formato de email
+    static validarEmail(req, res, next) {
+        const { email } = req.body;
+        if (email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({
                     success: false,
                     message: "Formato de email no válido",
                 });
             }
         }
-        next(); // OK
+        next();
     }
 
-    static validarNumerico(campo) { // Middleware: valida campo numérico >=0 en body
+    // Valida campo numérico >= 0
+    static validarNumerico(campo) {
         return (req, res, next) => {
-            const valor = req.body[campo]; // Valor
-            if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) { // No numérico o negativo
-                return res.status(400).json({ // 400
+            const valor = req.body[campo];
+            if (valor !== undefined && (isNaN(Number(valor)) || Number(valor) < 0)) {
+                return res.status(400).json({
                     success: false,
                     message: `El campo ${campo} debe ser un número válido mayor o igual a 0`,
                 });
@@ -45,11 +50,12 @@ class ValidationMiddleware { // Clase con métodos estáticos para middlewares d
         };
     }
 
-    static validarFecha(campo) { // Middleware: valida formato de fecha en body
+    // Valida formato de fecha
+    static validarFecha(campo) {
         return (req, res, next) => {
-            const fecha = req.body[campo]; // Fecha
-            if (fecha && isNaN(Date.parse(fecha))) { // No parseable
-                return res.status(400).json({ // 400
+            const fecha = req.body[campo];
+            if (fecha && isNaN(Date.parse(fecha))) {
+                return res.status(400).json({
                     success: false,
                     message: `El campo ${campo} debe ser una fecha válida`,
                 });
@@ -58,64 +64,88 @@ class ValidationMiddleware { // Clase con métodos estáticos para middlewares d
         };
     }
 
-    static sanitizarDatos(req, res, next) { // Middleware: limpia strings en body (trim)
-        for (const key in req.body) { // Para cada propiedad
-            if (typeof req.body[key] === "string") { // Si string
-                req.body[key] = req.body[key].trim(); // Elimina espacios
+    // Sanitiza strings en body
+    static sanitizarDatos(req, res, next) {
+        for (const key in req.body) {
+            if (typeof req.body[key] === "string") {
+                req.body[key] = req.body[key].trim();
             }
         }
         next();
     }
 
-    static logRequest(req, res, next) { // Middleware: loggea requests (timestamp, método, URL, IP, body si POST/PUT)
-        const timestamp = new Date().toISOString(); // Timestamp ISO
-        const method = req.method; // Método HTTP
-        const url = req.originalUrl; // URL
-        const ip = req.ip || req.connection.remoteAddress; // IP
-        console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`); // Log básico
-        if ((method === "POST" || method === "PUT") && req.body) { // Si body y método que lo usa
-            console.log(`[${timestamp}] Body:`, JSON.stringify(req.body, null, 2)); // Log body formateado
+    // Log de requests
+    static logRequest(req, res, next) {
+        const timestamp = new Date().toISOString();
+        const method = req.method;
+        const url = req.originalUrl;
+        const ip = req.ip || req.connection.remoteAddress;
+        console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`);
+        if ((method === "POST" || method === "PUT") && req.body) {
+            console.log(`[${timestamp}] Body:`, JSON.stringify(req.body, null, 2));
         }
         next();
     }
 
-    static validarParametroId(req, res, next) { // Middleware: valida ID en params (numérico >0)
-        const { id } = req.params; // ID
-        if (isNaN(parseInt(id)) || parseInt(id) <= 0) { // No válido
-            return res.status(400).json({ // 400
-                success: false,
-                message: "El ID debe ser un número válido mayor a 0",
-            });
-        }
-        next();
+    // Valida parámetro id como ObjectId de MongoDB (params, query o body)
+    static validarMongoId(campo, origen = "params") {
+        return (req, res, next) => {
+            const valor = req[origen][campo];
+            if (!mongoose.Types.ObjectId.isValid(valor)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `El campo ${campo} debe ser un ObjectId válido de MongoDB`,
+                });
+            }
+            next();
+        };
     }
 
-    static validarFiltros(req, res, next) { // Middleware: valida filtros de query (fechas, límite)
-        const { fechaDesde, fechaHasta, limite } = req.query; // Extrae
-        if (fechaDesde && isNaN(Date.parse(fechaDesde))) { // Fecha inválida
-            return res.status(400).json({ // 400
+    // Valida arrays de ObjectId
+    static validarMongoIdArray(campo, origen = "body") {
+        return (req, res, next) => {
+            const valores = req[origen][campo];
+            if (!Array.isArray(valores)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `El campo ${campo} debe ser un array`,
+                });
+            }
+            for (const id of valores) {
+                if (!mongoose.Types.ObjectId.isValid(id)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `El campo ${campo} contiene un valor no válido: ${id}`,
+                    });
+                }
+            }
+            next();
+        };
+    }
+
+    // Valida filtros de query (fechas, límite)
+    static validarFiltros(req, res, next) {
+        const { fechaDesde, fechaHasta, limite } = req.query;
+        if (fechaDesde && isNaN(Date.parse(fechaDesde))) {
+            return res.status(400).json({
                 success: false,
                 message: "fechaDesde debe ser una fecha válida",
             });
         }
         if (fechaHasta && isNaN(Date.parse(fechaHasta))) {
-            return res.status(400).json({ // 400
+            return res.status(400).json({
                 success: false,
                 message: "fechaHasta debe ser una fecha válida",
             });
         }
-        if ( // Si fechas y desde > hasta
-            fechaDesde &&
-            fechaHasta &&
-            new Date(fechaDesde) > new Date(fechaHasta)
-        ) {
-            return res.status(400).json({ // 400
+        if (fechaDesde && fechaHasta && new Date(fechaDesde) > new Date(fechaHasta)) {
+            return res.status(400).json({
                 success: false,
                 message: "fechaDesde debe ser menor que fechaHasta",
             });
         }
-        if (limite && (isNaN(parseInt(limite)) || parseInt(limite) <= 0)) { // Límite inválido
-            return res.status(400).json({ // 400
+        if (limite && (isNaN(parseInt(limite)) || parseInt(limite) <= 0)) {
+            return res.status(400).json({
                 success: false,
                 message: "limite debe ser un número mayor a 0",
             });
@@ -123,39 +153,32 @@ class ValidationMiddleware { // Clase con métodos estáticos para middlewares d
         next();
     }
 
-    static manejarErrores(err, req, res, next) { // Middleware global de errores: captura y responde
-        console.error("Error capturado por middleware:", err); // Log
-        if (err instanceof SyntaxError && err.status === 400 && "body" in err) { // JSON malformado
-            return res.status(400).json({ // 400
+    // Middleware global de manejo de errores
+    static manejarErrores(err, req, res, next) {
+        console.error("Error capturado por middleware:", err);
+        if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+            return res.status(400).json({
                 success: false,
                 message: "JSON mal formateado en el body de la request",
             });
         }
-        res.status(500).json({ // 500 general
+        res.status(500).json({
             success: false,
             message: "Error interno del servidor",
-            error: // Detalle condicional
-                process.env.NODE_ENV === "development"
-                    ? err.message // En dev, muestra error
-                    : "Contacte al administrador", // En prod, genérico
+            error: process.env.NODE_ENV === "development" ? err.message : "Contacte al administrador",
         });
     }
 
-    static establecerHeaders(req, res, next) { // Middleware: setea headers CORS y content-type para API
-        if (req.url.startsWith("/api/")) { // Si ruta API
-            res.header("Content-Type", "application/json; charset=utf-8"); // JSON UTF-8
+    // Establece headers CORS y content-type
+    static establecerHeaders(req, res, next) {
+        if (req.url.startsWith("/api/")) {
+            res.header("Content-Type", "application/json; charset=utf-8");
         }
-        res.header("Access-Control-Allow-Origin", "*"); // CORS origen *
-        res.header( // Métodos permitidos
-            "Access-Control-Allow-Methods",
-            "GET, POST, PUT, DELETE, OPTIONS"
-        );
-        res.header( // Headers permitidos
-            "Access-Control-Allow-Headers",
-            "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-        );
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
         next();
     }
 }
 
-export default ValidationMiddleware; // Exporta clase
+export default ValidationMiddleware;

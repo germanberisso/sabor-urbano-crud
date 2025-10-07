@@ -39,7 +39,7 @@ block content
               select.form-control(id="empleadoAsignado", name="empleadoAsignado")
                 option(value="") Todos
                 each emp in empleados
-                  option(value=emp.id) #{emp.nombre} #{emp.apellido}
+                  option(value=emp._id) #{emp.nombre} #{emp.apellido}
             .mb-3
               label.form-label(for="tipoPedido") Tipo de Pedido
               select.form-control(id="tipoPedido", name="tipoPedido")

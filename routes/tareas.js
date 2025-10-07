@@ -1,18 +1,19 @@
-import express from 'express'; // Express
-import TareasController from '../controllers/tareasController.js'; // Controlador
-import ValidationMiddleware from '../middleware/validation.js'; // Validaciones
+import express from 'express';
+import TareasController from '../controllers/tareasController.js';
+import ValidationMiddleware from '../middleware/validation.js';
 
-const router = express.Router(); // Router tareas
-const tareasController = new TareasController(); // Instancia
+const router = express.Router();
+const tareasController = new TareasController();
 
-const validarTarea = (req, res, next) => { // Middleware: valida create/update tareas
-    const { titulo, descripcion, area, estado, prioridad, empleadoAsignado, pedidoAsociado, observaciones } = req.body; // Campos
+// Middleware para validar tareas
+const validarTarea = (req, res, next) => {
+    const { titulo, descripcion, area, estado, prioridad, empleadoAsignado, pedidoAsociado, observaciones } = req.body;
 
-    if (req.method === 'PUT' && Object.keys(req.body).length === 0) { // PUT vacío
+    if (req.method === 'PUT' && Object.keys(req.body).length === 0) {
         return res.status(400).json({ success: false, message: 'Body vacío: proporcione al menos un campo.' });
     }
 
-    if (req.method === 'PUT') { // PUT sin válidos
+    if (req.method === 'PUT') {
         const camposValidos = [titulo, descripcion, area, estado, prioridad, empleadoAsignado, pedidoAsociado, observaciones]
             .some(f => f !== undefined);
         if (!camposValidos) {
@@ -20,38 +21,37 @@ const validarTarea = (req, res, next) => { // Middleware: valida create/update t
         }
     }
 
-    if (area && !['gestion_pedidos', 'control_inventario'].includes(area)) { // Área inválida
+    if (area && !['gestion_pedidos', 'control_inventario'].includes(area)) {
         return res.status(400).json({ success: false, message: 'Área debe ser: gestion_pedidos, control_inventario' });
     }
-    if (estado && !['pendiente', 'en_proceso', 'finalizada'].includes(estado)) { // Estado inválido
+    if (estado && !['pendiente', 'en_proceso', 'finalizada'].includes(estado)) {
         return res.status(400).json({ success: false, message: 'Estado debe ser: pendiente, en_proceso, finalizada' });
     }
-    if (prioridad && !['alta', 'media', 'baja'].includes(prioridad)) { // Prioridad inválida
+    if (prioridad && !['alta', 'media', 'baja'].includes(prioridad)) {
         return res.status(400).json({ success: false, message: 'Prioridad debe ser: alta, media, baja' });
     }
-    next(); // Continúa
+
+    next();
 };
 
-// GET con filtros (query)
-router.get('/', (req, res) => tareasController.getAll(req, res)); // GET /tareas: todas con filtros query
-router.get('/area/:area', (req, res) => tareasController.getByArea(req, res)); // GET /tareas/area/:area: por área
-router.get('/:id', (req, res) => tareasController.getById(req, res)); // GET /tareas/:id: una
+// Rutas API
+router.get('/', tareasController.getAll.bind(tareasController));
+router.get('/area/:area', tareasController.getByArea.bind(tareasController));
+router.get('/:id', tareasController.getById.bind(tareasController));
 
-router.post('/',
-    ValidationMiddleware.validarCamposRequeridos(['titulo', 'area']), // Obligatorios
-    validarTarea, // Específicos
-    (req, res) => tareasController.create(req, res) // POST /tareas: crea
+router.post(
+    '/',
+    ValidationMiddleware.validarCamposRequeridos(['titulo', 'area']),
+    validarTarea,
+    tareasController.create.bind(tareasController)
 );
 
-router.put('/:id',
-    validarTarea, // Valida
-    (req, res) => tareasController.update(req, res) // PUT /tareas/:id: actualiza
-);
+router.put('/:id', validarTarea, tareasController.update.bind(tareasController));
 
 // Transiciones de estado
-router.patch('/:id/iniciar', (req, res) => tareasController.iniciar(req, res)); // PATCH /tareas/:id/iniciar: inicia
-router.patch('/:id/finalizar', (req, res) => tareasController.finalizar(req, res)); // PATCH /tareas/:id/finalizar: finaliza
+router.patch('/:id/iniciar', tareasController.iniciar.bind(tareasController));
+router.patch('/:id/finalizar', tareasController.finalizar.bind(tareasController));
 
-router.delete('/:id', (req, res) => tareasController.delete(req, res)); // DELETE /tareas/:id: elimina
+router.delete('/:id', tareasController.delete.bind(tareasController));
 
-export default router; // Exporta
+export default router;

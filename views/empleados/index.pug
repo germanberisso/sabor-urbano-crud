@@ -36,7 +36,7 @@ block content
                 tbody
                   each emp in empleados
                     tr
-                      td= emp.id
+                      td= emp._id
                       td
                         strong #{emp.nombre} #{emp.apellido}
                       td
@@ -54,11 +54,11 @@ block content
                         small= new Date(emp.fechaIngreso).toLocaleDateString('es-AR')
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/empleados/${emp.id}`, target="_blank", title="Ver")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/empleados/${emp._id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/empleados/editar/${emp.id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/empleados/editar/${emp._id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=emp.id, onclick="eliminarEmpleado(this)", title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=emp._id, onclick="eliminarEmpleado(this)", title="Eliminar")
                             i.fas.fa-trash
     script.
       async function eliminarEmpleado(button) {

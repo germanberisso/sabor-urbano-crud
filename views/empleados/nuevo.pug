@@ -13,7 +13,7 @@ block content
     .col-lg-6
       .card
         .card-body
-          form#empleadoForm(action="/api/empleados", method="POST")
+          form#empleadoForm
             .mb-3
               label.form-label(for="nombre") Nombre
               input.form-control(type="text", id="nombre", name="nombre", required)
@@ -45,20 +45,43 @@ block content
                 option(value="inventario") Inventario
                 option(value="administracion") Administración
             .mb-3
+              label.form-label(for="sueldo") Sueldo
+              input.form-control(
+                type="number",
+                id="sueldo",
+                name="sueldo",
+                value=0
+              )
+            .mb-3
               label.form-label(for="fechaIngreso") Fecha de Ingreso
-              input.form-control(type="date", id="fechaIngreso", name="fechaIngreso", required, value=new Date().toISOString().split('T')[0])
+              input.form-control(
+                type="date",
+                id="fechaIngreso",
+                name="fechaIngreso",
+                required,
+                value=new Date().toISOString().split('T')[0]
+              )
             .d-grid
               button.btn.btn-success(type="submit")
                 i.fas.fa-save.me-2
                 | Crear Empleado
+
       a.btn.btn-outline-secondary.mt-3(href="/empleados")
         i.fas.fa-arrow-left.me-2
         | Volver
+
+    // Script para enviar el formulario con fetch
     script.
       document.getElementById('empleadoForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
+
+        // Convertir tipos
+        if (data.sueldo !== undefined) data.sueldo = Number(data.sueldo);
+        if (data.fechaIngreso) data.fechaIngreso = new Date(data.fechaIngreso);
+
         try {
           const response = await fetch('/api/empleados', {
             method: 'POST',
@@ -66,13 +89,15 @@ block content
             body: JSON.stringify(data)
           });
           const result = await response.json();
+
           if (result.success) {
             alert('Empleado creado exitosamente');
             window.location.href = '/empleados';
           } else {
-            alert(`Error: ${result.message}`);
+            alert(`Error: ${result.message || 'Error desconocido'}`);
           }
         } catch (error) {
+          console.error(error);
           alert('Error al crear el empleado');
         }
       });
