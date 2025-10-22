@@ -46,26 +46,39 @@ block content
         i.fas.fa-arrow-left.me-2
         | Volver
     script.
-      document.getElementById('insumoForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
-        if (!data.unidadMedida) delete data.unidadMedida;
-        if (!data.proveedor) delete data.proveedor;
-        try {
-          const response = await fetch('/api/insumos', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          const result = await response.json();
-          if (result.success) {
-            alert('Insumo creado exitosamente');
-            window.location.href = '/insumos';
-          } else {
-            alert(`Error: ${result.message}`);
+      const form = document.getElementById('insumoForm');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData);
+
+          data.stock = Number(data.stock);
+          data.stockMinimo = Number(data.stockMinimo);
+
+          if (Number.isNaN(data.stock) || Number.isNaN(data.stockMinimo)) {
+            alert('Stock y stock mínimo deben ser números válidos.');
+            return;
           }
-        } catch (error) {
-          alert('Error al crear el insumo');
-        }
-      });
+
+          if (!data.unidadMedida) delete data.unidadMedida;
+          if (!data.proveedor) delete data.proveedor;
+
+          try {
+            const response = await fetch('/api/insumos', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert('Insumo creado exitosamente');
+              window.location.href = '/insumos';
+            } else {
+              alert(`Error: ${result.message}`);
+            }
+          } catch (error) {
+            alert('Error al crear el insumo');
+          }
+        });
+      }

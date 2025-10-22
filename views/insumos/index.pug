@@ -35,8 +35,9 @@ block content
                     th Acciones
                 tbody
                   each insumo in insumos
+                    - const insumoId = insumo && insumo._id ? insumo._id.toString() : ''
                     tr
-                      td= insumo.id
+                      td= insumoId
                       td= insumo.nombre
                       td
                         span.badge(class= insumo.categoria === 'alimentos' ? 'bg-success' : insumo.categoria === 'bebidas' ? 'bg-info' : insumo.categoria === 'limpieza' ? 'bg-warning' : insumo.categoria === 'utensilios' ? 'bg-primary' : 'bg-secondary')= insumo.categoria
@@ -45,11 +46,11 @@ block content
                       td= insumo.unidadMedida || 'N/A'
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/insumos/${insumo.id}`, target="_blank", title="Ver")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/insumos/${insumoId}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/insumos/editar/${insumo.id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/insumos/editar/${insumoId}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=insumo.id, onclick="eliminarInsumo(this)", title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=insumoId, onclick="eliminarInsumo(this)", title="Eliminar")
                             i.fas.fa-trash
     script.
       async function eliminarInsumo(button) {
