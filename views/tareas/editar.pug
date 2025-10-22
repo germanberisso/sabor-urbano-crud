@@ -49,10 +49,6 @@ block content
                     - var isSelected = tarea.empleadoAsignado && emp._id && String(tarea.empleadoAsignado._id) === String(emp._id)
                     option(value=emp._id, selected=isSelected) #{emp.nombre} #{emp.apellido}
               .mb-3
-                label.form-label(for="pedidoAsociado") Pedido Asociado
-                //- Usamos _id de MongoDB
-                input.form-control(type="number", id="pedidoAsociado", name="pedidoAsociado", value=tarea.pedidoAsociado || '')
-              .mb-3
                 label.form-label(for="observaciones") Observaciones
                 textarea.form-control(id="observaciones", name="observaciones", rows="4")= tarea.observaciones || ''
               .d-grid
@@ -83,8 +79,7 @@ block content
         const data = Object.fromEntries(formData);
         
         // Limpiamos datos opcionales vacíos
-        if (!data.empleadoAsignado) data.empleadoAsignado = null; 
-        if (!data.pedidoAsociado) delete data.pedidoAsociado; 
+        if (!data.empleadoAsignado) data.empleadoAsignado = null;         
         if (!data.descripcion) data.descripcion = ''; // Enviar string vacío si no hay descripción
         if (!data.observaciones) data.observaciones = ''; // Enviar string vacío si no hay observaciones
 

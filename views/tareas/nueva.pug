@@ -46,9 +46,6 @@ block content
                   //- SOLUCIÓN: El `value` debe ser `emp._id` (propiedad de MongoDB) y no `emp.id`.
                   option(value=emp._id) #{emp.nombre} #{emp.apellido}
             .mb-3
-              label.form-label(for="pedidoAsociado") Pedido Asociado
-              input.form-control(type="number", id="pedidoAsociado", name="pedidoAsociado")
-            .mb-3
               label.form-label(for="observaciones") Observaciones
               textarea.form-control(id="observaciones", name="observaciones", rows="4")
             .d-grid
