@@ -14,7 +14,6 @@ const validarTarea = (req, res, next) => {
     estado,
     prioridad,
     empleadoAsignado,
-    pedidoAsociado,
     observaciones,
   } = req.body;
 
@@ -32,7 +31,6 @@ const validarTarea = (req, res, next) => {
       estado,
       prioridad,
       empleadoAsignado,
-      pedidoAsociado,
       observaciones,
     ].some((f) => f !== undefined);
     if (!camposValidos) {

@@ -17,8 +17,7 @@ const tareaSchema = new mongoose.Schema({
   // SOLUCIÓN (1/4): Corregimos el tipo de dato.
   // Para referenciar a otra colección en MongoDB, se debe usar ObjectId.
   // El error silencioso ocurría porque se intentaba guardar un texto (el ID del empleado) en un campo de tipo Número.
-  empleadoAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Empleado', default: null },
-  pedidoAsociado: { type: Number, default: null },
+  empleadoAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Empleado', default: null },  
   observaciones: { type: String, default: "" },
   fechaCreacion: { type: Date, default: Date.now },
   fechaInicio: { type: Date, default: null },
@@ -70,7 +69,6 @@ export default class TareaModel {
       estado: datos.estado || "pendiente",
       prioridad: datos.prioridad || "media",
       empleadoAsignado: datos.empleadoAsignado || null,
-      pedidoAsociado: datos.pedidoAsociado ? parseInt(datos.pedidoAsociado) : null,
       observaciones: datos.observaciones || "",
     });
     return await tarea.save();
@@ -84,7 +82,6 @@ export default class TareaModel {
       "estado",
       "prioridad",
       "empleadoAsignado",
-      "pedidoAsociado",
       "observaciones",
     ];
 
