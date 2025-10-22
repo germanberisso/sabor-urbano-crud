@@ -26,18 +26,16 @@ block content
               table.table.table-hover.mb-0
                 thead.table-light
                   tr
-                    th ID
                     th Título
                     th Área
                     th Estado
                     th Prioridad
-                    th Empleado
+                    th Empleado Asignado
                     th Fecha Creación
                     th Acciones
                 tbody
                   each tarea in tareas
                     tr
-                      td= tarea.id
                       td
                         strong= tarea.titulo
                         if tarea.descripcion
@@ -52,20 +50,22 @@ block content
                       td
                         span.badge(class= tarea.prioridad === 'alta' ? 'bg-danger' : tarea.prioridad === 'media' ? 'bg-warning' : 'bg-secondary')= tarea.prioridad
                       td
+                        //- SOLUCIÓN: Como ahora `empleadoAsignado` es un objeto populado,
+                        //- accedemos a sus propiedades para mostrar el nombre y apellido.
                         if tarea.empleadoAsignado
                           i.fas.fa-user.me-1
-                          | #{tarea.empleadoAsignado}
+                          | #{tarea.empleadoAsignado.nombre} #{tarea.empleadoAsignado.apellido}
                         else
                           span.text-muted Sin asignar
                       td
                         small= new Date(tarea.fechaCreacion).toLocaleDateString('es-AR')
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/tareas/${tarea.id}`, target="_blank", title="Ver")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/tareas/${tarea._id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/tareas/editar/${tarea.id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/tareas/editar/${tarea._id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=tarea.id, onclick="eliminarTarea(this)", title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=tarea._id, onclick="eliminarTarea(this)", title="Eliminar")
                             i.fas.fa-trash
     script.
       async function eliminarTarea(button) {
@@ -74,7 +74,7 @@ block content
           try {
             const response = await fetch(`/api/tareas/${id}`, { method: 'DELETE' });
             const result = await response.json();
-            if (result.success) {
+            if (response.ok && result.success) {
               alert('Tarea eliminada exitosamente');
               location.reload();
             } else {

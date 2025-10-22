@@ -28,22 +28,23 @@ block content
                 option(value="control_inventario") Control Inventario
             .mb-3
               label.form-label(for="estado") Estado
-              select.form-control(id="estado", name="estado", required)
-                option(value="pendiente") Pendiente
+              select.form-control(id="estado", name="estado")
+                option(value="pendiente" selected) Pendiente
                 option(value="en_proceso") En Proceso
                 option(value="finalizada") Finalizada
             .mb-3
               label.form-label(for="prioridad") Prioridad
-              select.form-control(id="prioridad", name="prioridad", required)
+              select.form-control(id="prioridad", name="prioridad")
+                option(value="media" selected) Media
                 option(value="alta") Alta
-                option(value="media") Media
                 option(value="baja") Baja
             .mb-3
               label.form-label(for="empleadoAsignado") Empleado Asignado
               select.form-control(id="empleadoAsignado", name="empleadoAsignado")
                 option(value="") Sin asignar
                 each emp in empleados
-                  option(value=emp.id) #{emp.nombre} #{emp.apellido}
+                  //- SOLUCIÓN: El `value` debe ser `emp._id` (propiedad de MongoDB) y no `emp.id`.
+                  option(value=emp._id) #{emp.nombre} #{emp.apellido}
             .mb-3
               label.form-label(for="pedidoAsociado") Pedido Asociado
               input.form-control(type="number", id="pedidoAsociado", name="pedidoAsociado")
@@ -62,8 +63,7 @@ block content
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        if (!data.empleadoAsignado) delete data.empleadoAsignado;
-        if (!data.pedidoAsociado) delete data.pedidoAsociado;
+        
         try {
           const response = await fetch('/api/tareas', {
             method: 'POST',
@@ -71,13 +71,14 @@ block content
             body: JSON.stringify(data)
           });
           const result = await response.json();
-          if (result.success) {
+          if (response.ok && result.success) {
             alert('Tarea creada exitosamente');
             window.location.href = '/tareas';
           } else {
-            alert(`Error: ${result.message}`);
+            // El mensaje de error ahora vendrá del backend con más detalles.
+            alert(`Error: ${result.message || 'No se pudo crear la tarea'}`);
           }
         } catch (error) {
-          alert('Error al crear la tarea');
+          alert('Error de conexión al crear la tarea.');
         }
       });

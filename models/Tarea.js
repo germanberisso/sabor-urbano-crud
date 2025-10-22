@@ -1,181 +1,133 @@
-import { promises as fs } from 'fs'; // I/O asíncrono
-import { join, dirname } from 'path'; // Rutas
-import { fileURLToPath } from 'url'; // Ruta actual
+import mongoose from "mongoose";
 
-class Tarea {
-    constructor() { // Inicializa ruta al JSON de tareas
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
-        this.filePath = join(__dirname, '../data/tareas.json');
+const tareaSchema = new mongoose.Schema({
+  titulo: { type: String, required: true },
+  descripcion: { type: String, default: "" },
+  area: { type: String, required: true },
+  estado: {
+    type: String,
+    enum: ["pendiente", "en_proceso", "finalizada"],
+    default: "pendiente",
+  },
+  prioridad: {
+    type: String,
+    enum: ["baja", "media", "alta"],
+    default: "media",
+  },
+  // SOLUCIÓN (1/4): Corregimos el tipo de dato.
+  // Para referenciar a otra colección en MongoDB, se debe usar ObjectId.
+  // El error silencioso ocurría porque se intentaba guardar un texto (el ID del empleado) en un campo de tipo Número.
+  empleadoAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Empleado', default: null },
+  pedidoAsociado: { type: Number, default: null },
+  observaciones: { type: String, default: "" },
+  fechaCreacion: { type: Date, default: Date.now },
+  fechaInicio: { type: Date, default: null },
+  fechaFinalizacion: { type: Date, default: null },
+});
+
+const Tarea = mongoose.model("Tarea", tareaSchema);
+
+// Mantenemos la estructura de clase `TareaModel`
+export default class TareaModel {
+  async getAll() {
+    // SOLUCIÓN (2/4): Usamos .populate() para traer los datos del empleado referenciado
+    // en lugar de solo su ID. Esto nos permitirá mostrar su nombre en la vista.
+    return await Tarea.find().populate('empleadoAsignado').lean();
+  }
+
+  async getById(id) {
+    return await Tarea.findById(id).populate('empleadoAsignado').lean();
+  }
+
+  async filtrar(filtros) {
+    const query = {};
+
+    if (filtros.estado) query.estado = filtros.estado;
+    if (filtros.prioridad) query.prioridad = filtros.prioridad;
+    if (filtros.area) query.area = filtros.area;
+    if (filtros.empleadoAsignado)
+      query.empleadoAsignado = filtros.empleadoAsignado;
+
+    // ... (resto de la lógica de filtros)
+    if (filtros.fechaDesde || filtros.fechaHasta) {
+      query.fechaCreacion = {};
+      if (filtros.fechaDesde)
+        query.fechaCreacion.$gte = new Date(filtros.fechaDesde);
+      if (filtros.fechaHasta)
+        query.fechaCreacion.$lte = new Date(filtros.fechaHasta);
     }
 
-    async getAll() { // Obtiene todas las tareas
-        try {
-            const data = await fs.readFile(this.filePath, 'utf8'); // Lee
-            const json = JSON.parse(data); // Parsea
-            return json.tareas || []; // Array o vacío
-        } catch (error) {
-            console.error('Error al leer tareas:', error); // Log
-            return []; // Vacío
+    return await Tarea.find(query).populate('empleadoAsignado').lean();
+  }
+
+  async create(datos) {
+    // SOLUCIÓN (3/4): Eliminamos `parseInt`. Mongoose se encarga de convertir
+    // el string del ID a ObjectId. Si el valor es un string vacío, lo convertimos a `null`.
+    const tarea = new Tarea({
+      titulo: datos.titulo,
+      descripcion: datos.descripcion,
+      area: datos.area,
+      estado: datos.estado || "pendiente",
+      prioridad: datos.prioridad || "media",
+      empleadoAsignado: datos.empleadoAsignado || null,
+      pedidoAsociado: datos.pedidoAsociado ? parseInt(datos.pedidoAsociado) : null,
+      observaciones: datos.observaciones || "",
+    });
+    return await tarea.save();
+  }
+
+  async update(id, datos) {
+    const camposPermitidos = [
+      "titulo",
+      "descripcion",
+      "area",
+      "estado",
+      "prioridad",
+      "empleadoAsignado",
+      "pedidoAsociado",
+      "observaciones",
+    ];
+
+    const actualizacion = {};
+    for (const campo of camposPermitidos) {
+      if (datos[campo] !== undefined) {
+        if (campo === 'empleadoAsignado') {
+          actualizacion[campo] = datos[campo] || null; // Manejar string vacío
+        } else {
+          actualizacion[campo] = datos[campo];
         }
+      }
     }
 
-    async saveAll(tareas) { // Guarda array de tareas
-        try {
-            const data = { tareas }; // Objeto con array
-            await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf8'); // Escribe formateado
-        } catch (error) {
-            console.error('Error al guardar tareas:', error); // Log
-            throw error; // Relanza
-        }
-    }
+    return await Tarea.findByIdAndUpdate(id, actualizacion, {
+      new: true,
+      lean: true,
+    });
+  }
 
-    async getById(id) { // Obtiene tarea por ID
-        const tareas = await this.getAll(); // Todas
-        return tareas.find(t => t.id === parseInt(id)); // Encuentra o undefined
-    }
+  async iniciar(id) {
+    return await Tarea.findByIdAndUpdate(
+      id,
+      {
+        estado: "en_proceso",
+        fechaInicio: new Date(),
+      },
+      { new: true, lean: true }
+    );
+  }
 
-    async filtrar(filtros) { // Aplica filtros múltiples a las tareas
-        let tareas = await this.getAll(); // Todas inicial
+  async finalizar(id) {
+    return await Tarea.findByIdAndUpdate(
+      id,
+      {
+        estado: "finalizada",
+        fechaFinalizacion: new Date(),
+      },
+      { new: true, lean: true }
+    );
+  }
 
-        if (filtros.estado) tareas = tareas.filter(t => t.estado === filtros.estado); // Filtra por estado
-        if (filtros.prioridad) tareas = tareas.filter(t => t.prioridad === filtros.prioridad); // Por prioridad
-        if (filtros.area) tareas = tareas.filter(t => t.area === filtros.area); // Por área
-        if (filtros.empleadoAsignado) tareas = tareas.filter(t => t.empleadoAsignado === parseInt(filtros.empleadoAsignado)); // Por empleado (entero)
-
-        // Fechas creación
-        if (filtros.fechaDesde) { // Desde fecha creación
-            tareas = tareas.filter(t => new Date(t.fechaCreacion) >= new Date(filtros.fechaDesde));
-        }
-        if (filtros.fechaHasta) { // Hasta fecha creación
-            tareas = tareas.filter(t => new Date(t.fechaCreacion) <= new Date(filtros.fechaHasta));
-        }
-
-        // Fechas de inicio
-        if (filtros.fechaInicioDesde) { // Desde fecha inicio (si existe)
-            tareas = tareas.filter(t => t.fechaInicio && new Date(t.fechaInicio) >= new Date(filtros.fechaInicioDesde));
-        }
-        if (filtros.fechaInicioHasta) {
-            tareas = tareas.filter(t => t.fechaInicio && new Date(t.fechaInicio) <= new Date(filtros.fechaInicioHasta));
-        }
-
-        // Fechas de finalización
-        if (filtros.fechaFinDesde) {
-            tareas = tareas.filter(t => t.fechaFinalizacion && new Date(t.fechaFinalizacion) >= new Date(filtros.fechaFinDesde));
-        }
-        if (filtros.fechaFinHasta) {
-            tareas = tareas.filter(t => t.fechaFinalizacion && new Date(t.fechaFinalizacion) <= new Date(filtros.fechaFinHasta));
-        }
-
-        // Filtro por tipoPedido/plataforma a través del pedido asociado
-        if ((filtros.tipoPedido && filtros.tipoPedido !== 'todos') || filtros.plataforma) { // Si hay filtro de pedido
-            const { default: PedidoModel } = await import('./Pedido.js'); // Importa dinámico Pedido
-            const pedidoModel = new PedidoModel(); // Instancia
-            const pedidos = await pedidoModel.getAll(); // Todos pedidos
-            let pedidosFiltrados = pedidos; // Inicial
-
-            if (filtros.tipoPedido && filtros.tipoPedido !== 'todos') { // Filtra tipo
-                pedidosFiltrados = pedidosFiltrados.filter(p => p.tipo === filtros.tipoPedido);
-            }
-            if (filtros.plataforma) { // Filtra plataforma
-                pedidosFiltrados = pedidosFiltrados.filter(p => p.plataforma === filtros.plataforma);
-            }
-
-            const pedidosIds = new Set(pedidosFiltrados.map(p => p.id)); // Set de IDs filtrados
-            tareas = tareas.filter(t => // Filtra tareas asociadas a esos pedidos o sin asociación
-                t.pedidoAsociado === null ||
-                pedidosIds.has(t.pedidoAsociado)
-            );
-        }
-
-        return tareas; // Retorna filtradas
-    }
-
-    async create(datos) { // Crea nueva tarea
-        const tareas = await this.getAll(); // Todas
-        const nuevoId = tareas.length > 0 ? Math.max(...tareas.map(t => t.id)) + 1 : 1; // Nuevo ID
-
-        const tarea = { // Objeto nuevo
-            id: nuevoId,
-            titulo: datos.titulo, // Título requerido
-            descripcion: datos.descripcion || '', // Descripción opcional
-            area: datos.area, // Área
-            estado: datos.estado || 'pendiente', // Estado default pendiente
-            prioridad: datos.prioridad || 'media', // Prioridad default media
-            empleadoAsignado: datos.empleadoAsignado ? parseInt(datos.empleadoAsignado) : null, // Empleado opcional
-            pedidoAsociado: datos.pedidoAsociado ? parseInt(datos.pedidoAsociado) : null, // Pedido opcional
-            observaciones: datos.observaciones || '', // Observaciones
-            fechaCreacion: new Date().toISOString(), // Fecha creación
-            fechaInicio: null, // Inicial null
-            fechaFinalizacion: null // Inicial null
-        };
-
-        tareas.push(tarea); // Agrega
-        await this.saveAll(tareas); // Guarda
-        return tarea; // Retorna
-    }
-
-    async update(id, datos) { // Actualiza tarea por ID
-        const tareas = await this.getAll(); // Todas
-        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
-        if (index === -1) throw new Error('Tarea no encontrada'); // Error si no
-
-        tareas[index] = { // Actualiza fusionando con campos limpios
-            ...tareas[index],
-            ...this._limpiarCamposActualizacion(datos) // Usa método privado para limpiar
-        };
-        await this.saveAll(tareas); // Guarda
-        return tareas[index]; // Retorna actualizada
-    }
-
-    _limpiarCamposActualizacion(datos) { // Privado: filtra solo campos permitidos para update
-        const permitidos = ['titulo', 'descripcion', 'area', 'estado', 'prioridad', 'empleadoAsignado', 'pedidoAsociado', 'observaciones']; // Lista permitida
-        const limpio = {}; // Objeto resultante
-        for (const k of permitidos) { // Para cada campo
-            if (datos[k] !== undefined) { // Si se proporciona
-                if (['empleadoAsignado', 'pedidoAsociado'].includes(k) && datos[k] !== null) { // Si es ID y no null
-                    limpio[k] = parseInt(datos[k]); // Convierte a entero
-                } else {
-                    limpio[k] = datos[k]; // Copia directo
-                }
-            }
-        }
-        return limpio; // Retorna limpio
-    }
-
-    async iniciar(id) { // Inicia tarea (setea fecha inicio y estado en_proceso)
-        const tareas = await this.getAll(); // Todas
-        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
-        if (index === -1) throw new Error('Tarea no encontrada'); // Error
-        if (!tareas[index].fechaInicio) { // Si no tiene fecha inicio
-            tareas[index].fechaInicio = new Date().toISOString(); // Setea ahora
-        }
-        tareas[index].estado = 'en_proceso'; // Cambia estado
-        await this.saveAll(tareas); // Guarda
-        return tareas[index]; // Retorna
-    }
-
-    async finalizar(id) { // Finaliza tarea (setea fecha fin y estado finalizada)
-        const tareas = await this.getAll(); // Todas
-        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
-        if (index === -1) throw new Error('Tarea no encontrada'); // Error
-        if (!tareas[index].fechaInicio) { // Fallback si no inició
-            tareas[index].fechaInicio = new Date().toISOString();
-        }
-        tareas[index].fechaFinalizacion = new Date().toISOString(); // Setea fin
-        tareas[index].estado = 'finalizada'; // Estado final
-        await this.saveAll(tareas); // Guarda
-        return tareas[index]; // Retorna
-    }
-
-    async delete(id) { // Elimina tarea por ID
-        const tareas = await this.getAll(); // Todas
-        const index = tareas.findIndex(t => t.id === parseInt(id)); // Índice
-        if (index === -1) throw new Error('Tarea no encontrada'); // Error
-        const eliminada = tareas.splice(index, 1)[0]; // Elimina y guarda referencia
-        await this.saveAll(tareas); // Guarda
-        return eliminada; // Retorna eliminada
-    }
+  async delete(id) {
+    return await Tarea.findByIdAndDelete(id).lean();
+  }
 }
-
-export default Tarea; // Exporta

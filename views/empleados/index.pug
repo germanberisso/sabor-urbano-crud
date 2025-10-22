@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   - var page = 'empleados'
-  
+
   .row.mb-4
     .col-12
       .d-flex.justify-content-between.align-items-center
@@ -28,7 +28,7 @@ block content
                   tr
                     th ID
                     th Empleado
-                    th Email/Teléfono
+                    th Email / Teléfono
                     th Rol
                     th Área
                     th Fecha Ingreso
@@ -36,7 +36,7 @@ block content
                 tbody
                   each emp in empleados
                     tr
-                      td= emp.id
+                      td= emp._id
                       td
                         strong #{emp.nombre} #{emp.apellido}
                       td
@@ -47,18 +47,20 @@ block content
                           i.fas.fa-phone.me-1
                           small= emp.telefono || 'Sin teléfono'
                       td
-                        span.badge(class= emp.rol === 'administrador' ? 'bg-danger' : emp.rol === 'cocinero' ? 'bg-primary' : emp.rol === 'repartidor' ? 'bg-warning' : emp.rol === 'mozo' ? 'bg-info' : 'bg-secondary')= emp.rol
+                        - var rolClass = emp.rol === 'administrador' ? 'bg-danger' : emp.rol === 'cocinero' ? 'bg-primary' : emp.rol === 'repartidor' ? 'bg-warning' : emp.rol === 'mozo' ? 'bg-info' : 'bg-secondary'
+                        span.badge(class=rolClass)= emp.rol
                       td
-                        span.badge(class= emp.area === 'cocina' ? 'bg-primary' : emp.area === 'reparto' ? 'bg-warning' : emp.area === 'salon' ? 'bg-info' : emp.area === 'inventario' ? 'bg-success' : 'bg-dark')= emp.area
+                        - var areaClass = emp.area === 'cocina' ? 'bg-primary' : emp.area === 'reparto' ? 'bg-warning' : emp.area === 'salon' ? 'bg-info' : emp.area === 'inventario' ? 'bg-success' : 'bg-dark'
+                        span.badge(class=areaClass)= emp.area
                       td
-                        small= new Date(emp.fechaIngreso).toLocaleDateString('es-AR')
+                        small= new Date(emp.fechaIngreso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/empleados/${emp.id}`, target="_blank", title="Ver")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/empleados/${emp._id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/empleados/editar/${emp.id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/empleados/editar/${emp._id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=emp.id, onclick="eliminarEmpleado(this)", title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=emp._id, onclick="eliminarEmpleado(this)", title="Eliminar")
                             i.fas.fa-trash
     script.
       async function eliminarEmpleado(button) {

@@ -2,7 +2,7 @@ extends layout
 
 block content
   - var page = 'filtros'
-  
+
   .row.mb-4
     .col-12
       h1.display-6
@@ -17,49 +17,49 @@ block content
             .mb-3
               label.form-label(for="estado") Estado
               select.form-control(id="estado", name="estado")
-                option(value="") Todos
-                option(value="pendiente") Pendiente
-                option(value="en_proceso") En Proceso
-                option(value="finalizada") Finalizada
+                option(value="", selected= !filtros || !filtros.estado) Todos
+                option(value="pendiente", selected= filtros?.estado === 'pendiente') Pendiente
+                option(value="en_proceso", selected= filtros?.estado === 'en_proceso') En Proceso
+                option(value="finalizada", selected= filtros?.estado === 'finalizada') Finalizada
             .mb-3
               label.form-label(for="prioridad") Prioridad
               select.form-control(id="prioridad", name="prioridad")
-                option(value="") Todos
-                option(value="alta") Alta
-                option(value="media") Media
-                option(value="baja") Baja
+                option(value="", selected= !filtros || !filtros.prioridad) Todos
+                option(value="alta", selected= filtros?.prioridad === 'alta') Alta
+                option(value="media", selected= filtros?.prioridad === 'media') Media
+                option(value="baja", selected= filtros?.prioridad === 'baja') Baja
             .mb-3
               label.form-label(for="area") Área
               select.form-control(id="area", name="area")
-                option(value="") Todos
-                option(value="gestion_pedidos") Gestión Pedidos
-                option(value="control_inventario") Control Inventario
+                option(value="", selected= !filtros || !filtros.area) Todos
+                option(value="gestion_pedidos", selected= filtros?.area === 'gestion_pedidos') Gestión Pedidos
+                option(value="control_inventario", selected= filtros?.area === 'control_inventario') Control Inventario
             .mb-3
               label.form-label(for="empleadoAsignado") Empleado Asignado
               select.form-control(id="empleadoAsignado", name="empleadoAsignado")
-                option(value="") Todos
+                option(value="", selected= !filtros || !filtros.empleadoAsignado) Todos
                 each emp in empleados
-                  option(value=emp.id) #{emp.nombre} #{emp.apellido}
+                  option(value=emp._id, selected= filtros?.empleadoAsignado == emp._id) #{emp.nombre} #{emp.apellido}
             .mb-3
               label.form-label(for="tipoPedido") Tipo de Pedido
               select.form-control(id="tipoPedido", name="tipoPedido")
-                option(value="") Todos
-                option(value="presencial") Presencial
-                option(value="delivery") Delivery
+                option(value="", selected= !filtros || !filtros.tipoPedido) Todos
+                option(value="presencial", selected= filtros?.tipoPedido === 'presencial') Presencial
+                option(value="delivery", selected= filtros?.tipoPedido === 'delivery') Delivery
             .mb-3
               label.form-label(for="plataforma") Plataforma
               select.form-control(id="plataforma", name="plataforma")
-                option(value="") Todos
-                option(value="rappi") Rappi
-                option(value="pedidosya") PedidosYa
-                option(value="propia") Propia
-                option(value="local") Local
+                option(value="", selected= !filtros || !filtros.plataforma) Todos
+                option(value="rappi", selected= filtros?.plataforma === 'rappi') Rappi
+                option(value="pedidosya", selected= filtros?.plataforma === 'pedidosya') PedidosYa
+                option(value="propia", selected= filtros?.plataforma === 'propia') Propia
+                option(value="local", selected= filtros?.plataforma === 'local') Local
             .mb-3
               label.form-label(for="fechaDesde") Fecha Desde
-              input.form-control(type="date", id="fechaDesde", name="fechaDesde")
+              input.form-control(type="date", id="fechaDesde", name="fechaDesde", value=filtros?.fechaDesde)
             .mb-3
               label.form-label(for="fechaHasta") Fecha Hasta
-              input.form-control(type="date", id="fechaHasta", name="fechaHasta")
+              input.form-control(type="date", id="fechaHasta", name="fechaHasta", value=filtros?.fechaHasta)
             .d-grid
               button.btn.btn-info(type="submit")
                 i.fas.fa-filter.me-2

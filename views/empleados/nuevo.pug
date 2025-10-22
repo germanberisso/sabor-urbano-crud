@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   - var page = 'empleados'
-  
+
   .row.mb-4
     .col-12
       h1.display-6
@@ -13,7 +13,7 @@ block content
     .col-lg-6
       .card
         .card-body
-          form#empleadoForm(action="/api/empleados", method="POST")
+          form#empleadoForm(action="/empleados/nuevo", method="POST")
             .mb-3
               label.form-label(for="nombre") Nombre
               input.form-control(type="text", id="nombre", name="nombre", required)
@@ -54,25 +54,3 @@ block content
       a.btn.btn-outline-secondary.mt-3(href="/empleados")
         i.fas.fa-arrow-left.me-2
         | Volver
-    script.
-      document.getElementById('empleadoForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
-        try {
-          const response = await fetch('/api/empleados', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
-          const result = await response.json();
-          if (result.success) {
-            alert('Empleado creado exitosamente');
-            window.location.href = '/empleados';
-          } else {
-            alert(`Error: ${result.message}`);
-          }
-        } catch (error) {
-          alert('Error al crear el empleado');
-        }
-      });

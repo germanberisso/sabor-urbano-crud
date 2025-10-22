@@ -1,58 +1,64 @@
-import express from 'express'; // Express
-import InsumosController from '../controllers/insumosController.js'; // Controlador
-import ValidationMiddleware from '../middleware/validation.js'; // Validaciones
+import express from "express";
+import insumosController from "../controllers/insumosController.js";
+import ValidationMiddleware from "../middleware/validation.js";
 
-const router = express.Router(); // Router insumos
-const insumosController = new InsumosController(); // Instancia
+const router = express.Router();
 
-const validarInsumo = (req, res, next) => { // Middleware: valida para create/update insumos
-    const { nombre, categoria, stock, stockMinimo, unidadMedida, proveedor } = req.body; // Campos body
+// --- Middleware de logs ---
+router.use(ValidationMiddleware.logRequest);
 
-    if (req.method === 'PUT' && Object.keys(req.body).length === 0) { // PUT vacío
-        return res.status(400).json({ success: false, message: 'Body vacío: envíe al menos un campo.' });
-    }
-    if (req.method === 'PUT') { // PUT sin campos válidos
-        const alguno = [nombre, categoria, stock, stockMinimo, unidadMedida, proveedor].some(f => f !== undefined);
-        if (!alguno) {
-            return res.status(400).json({ success: false, message: 'Incluya algún campo para actualizar.' });
-        }
-    }
-    if (categoria && !['alimentos', 'bebidas', 'limpieza', 'utensilios', 'otros'].includes(categoria)) { // Categoría inválida
-        return res.status(400).json({
-            success: false,
-            message: 'Categoría debe ser: alimentos, bebidas, limpieza, utensilios, otros'
-        });
-    }
-    next(); // Continúa
-};
+// --- Validaciones específicas para insumos ---
+const validarCamposInsumo = ValidationMiddleware.validarCamposRequeridos([
+  "nombre",
+  "categoria",
+  "stock",
+  "stockMinimo"
+]);
 
-// Listado general
-router.get('/', (req, res) => insumosController.getAll(req, res)); // GET /insumos: todos
-// Bajo stock
-router.get('/bajo-stock', (req, res) => insumosController.getBajoStock(req, res)); // GET /insumos/bajo-stock: bajos
-// Alertas
-router.get('/alertas', (req, res) => insumosController.getAlertas(req, res)); // GET /insumos/alertas: alertas
-// Por categoría
-router.get('/categoria/:categoria', (req, res) => insumosController.getByCategoria(req, res)); // GET /insumos/categoria/:cat: por cat
-// Detalle
-router.get('/:id', (req, res) => insumosController.getById(req, res)); // GET /insumos/:id: uno
+const validarNumericos = [
+  ValidationMiddleware.validarNumerico("stock"),
+  ValidationMiddleware.validarNumerico("stockMinimo")
+];
 
-router.post('/',
-    ValidationMiddleware.validarCamposRequeridos(['nombre', 'categoria', 'stock', 'stockMinimo']), // Obligatorios
-    validarInsumo, // Específicos
-    (req, res) => insumosController.create(req, res) // POST /insumos: crea
+// --- Rutas ---
+router.get("/", insumosController.getAll);
+router.get("/bajo-stock", insumosController.getBajoStock);
+router.get("/alertas", insumosController.getAlertas);
+
+router.get(
+  "/:id",
+  ValidationMiddleware.validarParametroId,
+  insumosController.getById
 );
 
-router.put('/:id',
-    validarInsumo, // Valida
-    (req, res) => insumosController.update(req, res) // PUT /insumos/:id: actualiza general
+router.post(
+  "/",
+  ValidationMiddleware.sanitizarDatos,
+  validarCamposInsumo,
+  validarNumericos,
+  insumosController.create
 );
 
-// Actualizar stock absoluto
-router.put('/:id/stock', (req, res) => insumosController.actualizarStock(req, res)); // PUT /insumos/:id/stock: stock nuevo
-// Descontar stock
-router.put('/:id/descontar', (req, res) => insumosController.descontarStock(req, res)); // PUT /insumos/:id/descontar: resta cantidad
+router.put(
+  "/:id",
+  ValidationMiddleware.validarParametroId,
+  ValidationMiddleware.sanitizarDatos,
+  validarCamposInsumo,
+  validarNumericos,
+  insumosController.update
+);
 
-router.delete('/:id', (req, res) => insumosController.delete(req, res)); // DELETE /insumos/:id: elimina
+router.patch(
+  "/:id/stock",
+  ValidationMiddleware.validarParametroId,
+  ValidationMiddleware.validarNumerico("stock"),
+  insumosController.actualizarStock
+);
 
-export default router; // Exporta
+router.delete(
+  "/:id",
+  ValidationMiddleware.validarParametroId,
+  insumosController.delete
+);
+
+export default router;

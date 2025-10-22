@@ -7,15 +7,16 @@ block content
     .col-12
       h1.display-6
         i.fas.fa-edit.text-warning.me-3
-        | Editar Tarea
+        //- Mostramos el _id de MongoDB
+        | Editar Tarea #{tarea ? tarea.titulo : ''} (ID: #{tarea ? tarea._id : 'N/A'})
 
   .row
     .col-lg-6
       .card
         .card-body
           if tarea
-            form#tareaForm(action=`/api/tareas/${tarea.id}?_method=PUT` method="POST")
-              input(type="hidden", name="_method", value="PUT")
+            //- Añadimos data attribute para el ID
+            form#tareaForm(data-tarea-id=tarea._id, method="POST") 
               .mb-3
                 label.form-label(for="titulo") Título
                 input.form-control(type="text", id="titulo", name="titulo", value=tarea.titulo, required)
@@ -44,9 +45,12 @@ block content
                 select.form-control(id="empleadoAsignado", name="empleadoAsignado")
                   option(value="") Sin asignar
                   each emp in empleados
-                    option(value=emp.id, selected=tarea.empleadoAsignado === emp.id) #{emp.nombre} #{emp.apellido}
+                    //- SOLUCIÓN: Verificación segura y comparación de strings para Pug
+                    - var isSelected = tarea.empleadoAsignado && emp._id && String(tarea.empleadoAsignado._id) === String(emp._id)
+                    option(value=emp._id, selected=isSelected) #{emp.nombre} #{emp.apellido}
               .mb-3
                 label.form-label(for="pedidoAsociado") Pedido Asociado
+                //- Usamos _id de MongoDB
                 input.form-control(type="number", id="pedidoAsociado", name="pedidoAsociado", value=tarea.pedidoAsociado || '')
               .mb-3
                 label.form-label(for="observaciones") Observaciones
@@ -63,28 +67,45 @@ block content
         i.fas.fa-arrow-left.me-2
         | Volver
     script.
-      console.log('ID de la tarea:', #{tarea.id});
-      document.getElementById('tareaForm').addEventListener('submit', async (e) => {
+      const form = document.getElementById('tareaForm');
+      // Obtenemos el ID desde el data attribute
+      const tareaId = form.dataset.tareaId; 
+      
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        if (!tareaId) {
+          alert('Error: No se pudo encontrar el ID de la tarea para actualizar.');
+          return;
+        }
+
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        if (!data.empleadoAsignado) delete data.empleadoAsignado;
-        if (!data.pedidoAsociado) delete data.pedidoAsociado;
+        
+        // Limpiamos datos opcionales vacíos
+        if (!data.empleadoAsignado) data.empleadoAsignado = null; 
+        if (!data.pedidoAsociado) delete data.pedidoAsociado; 
+        if (!data.descripcion) data.descripcion = ''; // Enviar string vacío si no hay descripción
+        if (!data.observaciones) data.observaciones = ''; // Enviar string vacío si no hay observaciones
+
         try {
-          const response = await fetch(`/api/tareas/${#{tarea.id}}`, {
-            method: 'PUT',
+          const response = await fetch(`/api/tareas/${tareaId}`, { 
+            method: 'PUT', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key]) => key !== '_method')))
+            body: JSON.stringify(data) 
           });
+          
           const result = await response.json();
-          if (result.success) {
+          
+          if (response.ok && result.success) {
             alert('Tarea actualizada exitosamente');
             window.location.href = '/tareas';
           } else {
-            alert(`Error: ${result.message}`);
+            console.error('Error del backend:', result); 
+            alert(`Error al actualizar: ${result.message || 'Respuesta no exitosa del servidor'}`);
           }
         } catch (error) {
-          alert('Error al actualizar la tarea');
-          console.error('Error:', error);
+          console.error('Error en fetch:', error);
+          alert('Error de conexión al actualizar la tarea.');
         }
       });
