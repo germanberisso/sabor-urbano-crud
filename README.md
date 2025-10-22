@@ -418,5 +418,5 @@ Se recomienda usar un cliente API como Thunder Client (extensión de VS Code) o 
 * Pug Template Engine: [https://pugjs.org/](https://pugjs.org/)
 * Bootstrap Documentation: [https://getbootstrap.com/docs/5.1/](https://getbootstrap.com/docs/5.1/)
 * MDN Web Docs (Fetch API, Async/Await): [https://developer.mozilla.org/](https://developer.mozilla.org/)
-* MongoDB Compass Documentation: https://www.mongodb.com/docs/compass/
-* MongoDB Atlas Documentation: https://www.mongodb.com/docs/atlas/
+* MongoDB Compass Documentation: [https://www.mongodb.com/docs/compass/](https://www.mongodb.com/docs/compass/)
+* MongoDB Atlas Documentation: [https://www.mongodb.com/docs/atlas/](https://www.mongodb.com/docs/atlas/)
