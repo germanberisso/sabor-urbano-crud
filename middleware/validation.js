@@ -3,7 +3,7 @@ class ValidationMiddleware { // Clase con métodos estáticos para middlewares d
         return (req, res, next) => { // Retorna función middleware
             const camposFaltantes = []; // Array para faltantes
             for (const campo of camposRequeridos) { // Para cada campo requerido
-                if (!req.body[campo] || req.body[campo].toString().trim() === "") { // Si vacío o no existe
+                if (req.body[campo] == null || req.body[campo].toString().trim() === "") { // Si vacío o no existe
                     camposFaltantes.push(campo); // Agrega
                 }
             }

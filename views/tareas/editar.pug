@@ -7,15 +7,15 @@ block content
     .col-12
       h1.display-6
         i.fas.fa-edit.text-warning.me-3
-        | Editar Tarea
+        | Editar Tarea #{tarea ? tarea.titulo : ''} (ID: #{tarea ? tarea._id : 'N/A'})
 
   .row
     .col-lg-6
       .card
         .card-body
           if tarea
-            form#tareaForm(action=`/api/tareas/${tarea.id}?_method=PUT` method="POST")
-              input(type="hidden", name="_method", value="PUT")
+            //- El form ahora apunta a la API y se manejará con JS
+            form#tareaForm(data-tarea-id=tarea._id) 
               .mb-3
                 label.form-label(for="titulo") Título
                 input.form-control(type="text", id="titulo", name="titulo", value=tarea.titulo, required)
@@ -43,11 +43,24 @@ block content
                 label.form-label(for="empleadoAsignado") Empleado Asignado
                 select.form-control(id="empleadoAsignado", name="empleadoAsignado")
                   option(value="") Sin asignar
-                  each emp in empleados
-                    option(value=emp.id, selected=tarea.empleadoAsignado === emp.id) #{emp.nombre} #{emp.apellido}
+                  if empleados
+                    each emp in empleados
+                      //- Compara ObjectIds como strings para la selección
+                      - var isSelectedEmp = tarea.empleadoAsignado && emp._id && String(tarea.empleadoAsignado._id) === String(emp._id)
+                      option(value=emp._id, selected=isSelectedEmp) #{emp.nombre} #{emp.apellido}
+              
+              //- Select para Pedido Asociado con valor seleccionado
               .mb-3
                 label.form-label(for="pedidoAsociado") Pedido Asociado
-                input.form-control(type="number", id="pedidoAsociado", name="pedidoAsociado", value=tarea.pedidoAsociado || '')
+                select.form-control(id="pedidoAsociado", name="pedidoAsociado")
+                  option(value="") Sin asignar
+                  if pedidos
+                    each ped in pedidos
+                      //- Compara ObjectIds como strings para la selección
+                      - var isSelectedPed = tarea.pedidoAsociado && ped._id && String(tarea.pedidoAsociado._id) === String(ped._id)
+                      - var clienteNombre = ped.cliente && ped.cliente.nombre ? ped.cliente.nombre : 'Presencial'
+                      option(value=ped._id, selected=isSelectedPed) Pedido ##{ped.numeroOrden || 'N/A'} - #{clienteNombre}
+              
               .mb-3
                 label.form-label(for="observaciones") Observaciones
                 textarea.form-control(id="observaciones", name="observaciones", rows="4")= tarea.observaciones || ''
@@ -59,32 +72,56 @@ block content
             .alert.alert-danger
               i.fas.fa-exclamation-triangle.me-2
               | Tarea no encontrada
-      a.btn.btn-outline-secondary.mt-3(href="/tareas")
-        i.fas.fa-arrow-left.me-2
-        | Volver
-    script.
-      console.log('ID de la tarea:', #{tarea.id});
-      document.getElementById('tareaForm').addEventListener('submit', async (e) => {
+          a.btn.btn-outline-secondary.mt-3(href="/tareas")
+            i.fas.fa-arrow-left.me-2
+            | Volver
+
+  //- Script para enviar el formulario a la API con método PUT
+  script.
+    const form = document.getElementById('tareaForm');
+    const tareaId = form.dataset.tareaId; // Obtener ID desde data attribute
+    
+    if (form && tareaId) { // Asegurarse que ambos existen
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        if (!data.empleadoAsignado) delete data.empleadoAsignado;
-        if (!data.pedidoAsociado) delete data.pedidoAsociado;
+        
+        // Limpiar valores vacíos para que se guarden como null
+        if (!data.empleadoAsignado) data.empleadoAsignado = null; 
+        if (!data.pedidoAsociado) data.pedidoAsociado = null; 
+        if (!data.descripcion) data.descripcion = '';
+        if (!data.observaciones) data.observaciones = '';
+
+        console.log(`Enviando datos a /api/tareas/${tareaId}:`, data); // Debug
+
         try {
-          const response = await fetch(`/api/tareas/${#{tarea.id}}`, {
-            method: 'PUT',
+          const response = await fetch(`/api/tareas/${tareaId}`, { // Apunta a la ruta API PUT
+            method: 'PUT', // Usar método PUT
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key]) => key !== '_method')))
+            body: JSON.stringify(data) 
           });
+          
           const result = await response.json();
-          if (result.success) {
+          console.log(`Respuesta de /api/tareas/${tareaId}:`, result); // Debug
+
+          if (response.ok && result.success) {
             alert('Tarea actualizada exitosamente');
-            window.location.href = '/tareas';
+            window.location.href = '/tareas'; // Redirige a la lista de tareas
           } else {
-            alert(`Error: ${result.message}`);
+             console.error('Error del backend al actualizar:', result); 
+             alert(`Error al actualizar tarea: ${result.message || 'Error desconocido'}`);
           }
         } catch (error) {
-          alert('Error al actualizar la tarea');
-          console.error('Error:', error);
+          console.error('Error en fetch PUT:', error);
+          alert('Error de conexión al actualizar la tarea.');
         }
       });
+    } else {
+      console.error("Error: No se encontró el formulario o el ID de la tarea para el script.");
+      // Opcional: deshabilitar el botón de submit si falta el ID
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
+      alert("Error crítico: No se puede actualizar la tarea. Recargue la página.");
+    }

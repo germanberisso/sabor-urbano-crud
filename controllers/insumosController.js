@@ -1,266 +1,222 @@
-import InsumoModel from '../models/Insumo.js'; // Importa modelo Insumo
+import Insumo from "../models/Insumo.js";
 
-class InsumosController { // Controlador para insumos: lógica de rutas
-    constructor() { // Inicializa modelo
-        this.insumoModel = new InsumoModel(); // Instancia para métodos
+class InsumosController {
+  // Obtener todos los insumos
+  async getAll(req, res) {
+    try {
+      const insumos = await Insumo.find().lean();
+      res.json({ success: true, data: insumos });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error al obtener insumos", error });
     }
+  }
 
-    async getAll(req, res) { // Todos los insumos: GET /
-        try {
-            const insumos = await this.insumoModel.getAll(); // Obtiene array
-            res.json({ // JSON éxito
-                success: true,
-                data: insumos,
-                total: insumos.length
-            });
-        } catch (error) {
-            console.error('Error en getAll insumos:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al obtener los insumos',
-                error: error.message
-            });
+  // Obtener por ID
+  async getById(req, res) {
+    try {
+      const insumo = await Insumo.findById(req.params.id).lean();
+      if (!insumo)
+        return res
+          .status(404)
+          .json({ success: false, message: "Insumo no encontrado" });
+      res.json({ success: true, data: insumo });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error al obtener insumo", error });
+    }
+  }
+
+  // Crear nuevo insumo
+  async create(req, res) {
+    try {
+      const { nombre, categoria, stock, stockMinimo, unidadMedida, proveedor } =
+        req.body;
+
+      const stockNumero = Number(stock);
+      const stockMinimoNumero = Number(stockMinimo);
+
+      if (Number.isNaN(stockNumero) || Number.isNaN(stockMinimoNumero)) {
+        return res.status(400).json({
+          success: false,
+          message: "Stock y stock mínimo deben ser numéricos",
+        });
+      }
+
+      const estado = determinarEstado(stockNumero, stockMinimoNumero);
+      const nuevoInsumo = new Insumo({
+        nombre,
+        categoria,
+        stock: stockNumero,
+        stockMinimo: stockMinimoNumero,
+        unidadMedida,
+        proveedor,
+        estado,
+        ultimaActualizacion: new Date(),
+      });
+      const insumoGuardado = await nuevoInsumo.save();
+      res.status(201).json({ success: true, data: insumoGuardado });
+    } catch (error) {
+      console.error("Error en InsumosController.create:", error);
+      res
+        .status(500)
+        .json({
+          success: false,
+          message: "Error al crear insumo",
+          error: error?.message || error,
+        });
+    }
+  }
+
+  // Actualizar campos
+  async update(req, res) {
+    try {
+      const { id } = req.params;
+      const datos = req.body;
+      const insumo = await Insumo.findById(id);
+
+      if (!insumo) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Insumo no encontrado" });
+      }
+
+      if (datos.nombre !== undefined) insumo.nombre = datos.nombre;
+      if (datos.categoria !== undefined) insumo.categoria = datos.categoria;
+      if (datos.unidadMedida !== undefined)
+        insumo.unidadMedida = datos.unidadMedida;
+      if (datos.proveedor !== undefined) insumo.proveedor = datos.proveedor;
+
+      if (datos.stockMinimo !== undefined) {
+        const stockMinimoNumero = Number(datos.stockMinimo);
+        if (Number.isNaN(stockMinimoNumero)) {
+          return res.status(400).json({
+            success: false,
+            message: "Stock mínimo debe ser numérico",
+          });
         }
-    }
+        insumo.stockMinimo = stockMinimoNumero;
+      }
 
-    async getById(req, res) { // Por ID: GET /:id
-        try {
-            const { id } = req.params; // ID
-            const insumo = await this.insumoModel.getById(id); // Busca
-            if (!insumo) { // No encontrado
-                return res.status(404).json({ // 404
-                    success: false,
-                    message: 'Insumo no encontrado'
-                });
-            }
-            res.json({ // Éxito
-                success: true,
-                data: insumo
-            });
-        } catch (error) {
-            console.error('Error en getById insumo:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al obtener el insumo',
-                error: error.message
-            });
+      if (datos.stock !== undefined) {
+        const stockNumero = Number(datos.stock);
+        if (Number.isNaN(stockNumero)) {
+          return res.status(400).json({
+            success: false,
+            message: "Stock debe ser numérico",
+          });
         }
-    }
+        insumo.stock = stockNumero;
+      }
 
-    async getBajoStock(req, res) { // Insumos con stock bajo: GET /bajo-stock
-        try {
-            const insumos = await this.insumoModel.getBajoStock(); // Filtra en modelo
-            res.json({ // Éxito
-                success: true,
-                data: insumos,
-                total: insumos.length
-            });
-        } catch (error) {
-            console.error('Error en getBajoStock:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al obtener insumos con stock bajo',
-                error: error.message
-            });
-        }
-    }
+      insumo.estado = determinarEstado(insumo.stock, insumo.stockMinimo);
+      insumo.ultimaActualizacion = new Date();
 
-    async getByCategoria(req, res) { // Por categoría: GET /categoria/:categoria
-        try {
-            const { categoria } = req.params; // Categoría
-            const categoriasValidas = ['alimentos', 'bebidas', 'limpieza', 'utensilios', 'otros']; // Lista
-            if (!categoriasValidas.includes(categoria)) { // Valida
-                return res.status(400).json({ // 400
-                    success: false,
-                    message: 'Categoría no válida. Use: alimentos, bebidas, limpieza, utensilios, otros'
-                });
-            }
-            const insumos = await this.insumoModel.getByCategoria(categoria); // Filtra
-            res.json({ // Éxito
-                success: true,
-                data: insumos,
-                categoria: categoria,
-                total: insumos.length
-            });
-        } catch (error) {
-            console.error('Error en getByCategoria:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al filtrar insumos por categoría',
-                error: error.message
-            });
-        }
-    }
+      const insumoActualizado = await insumo.save();
 
-    async create(req, res) { // Crea insumo: POST /
-        try {
-            const datosInsumo = req.body; // Datos
-            if (!datosInsumo.nombre || !datosInsumo.categoria) { // Obligatorios
-                return res.status(400).json({ // 400
-                    success: false,
-                    message: 'Nombre y categoría son obligatorios'
-                });
-            }
-            const categoriasValidas = ['alimentos', 'bebidas', 'limpieza', 'utensilios', 'otros']; // Valida cat
-            if (!categoriasValidas.includes(datosInsumo.categoria)) {
-                return res.status(400).json({ // 400
-                    success: false,
-                    message: 'Categoría no válida'
-                });
-            }
-            const nuevoInsumo = await this.insumoModel.create(datosInsumo); // Crea
-            res.status(201).json({ // 201
-                success: true,
-                message: 'Insumo creado exitosamente',
-                data: nuevoInsumo
-            });
-        } catch (error) {
-            console.error('Error en create insumo:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al crear el insumo',
-                error: error.message
-            });
-        }
+      res.json({ success: true, data: insumoActualizado });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error al actualizar insumo", error });
     }
+  }
 
-    async update(req, res) { // Actualiza insumo: PUT /:id
-        try {
-            const { id } = req.params; // ID
-            const datosActualizados = req.body; // Datos
-            const insumoExistente = await this.insumoModel.getById(id); // Verifica
-            if (!insumoExistente) {
-                return res.status(404).json({ // 404
-                    success: false,
-                    message: 'Insumo no encontrado'
-                });
-            }
-            const insumoActualizado = await this.insumoModel.update(id, datosActualizados); // Actualiza
-            res.json({ // Éxito
-                success: true,
-                message: 'Insumo actualizado exitosamente',
-                data: insumoActualizado
-            });
-        } catch (error) {
-            console.error('Error en update insumo:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al actualizar el insumo',
-                error: error.message
-            });
-        }
+  // Eliminar
+  async delete(req, res) {
+    try {
+      const { id } = req.params;
+      const eliminado = await Insumo.findByIdAndDelete(id);
+      if (!eliminado)
+        return res
+          .status(404)
+          .json({ success: false, message: "Insumo no encontrado" });
+      res.json({ success: true, message: "Insumo eliminado correctamente" });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error al eliminar insumo", error });
     }
+  }
 
-    async actualizarStock(req, res) { // Actualiza stock absoluto: PUT /:id/stock
-        try {
-            const { id } = req.params; // ID
-            const { stock } = req.body; // Nuevo stock
-            const insumoExistente = await this.insumoModel.getById(id); // Verifica
-            if (!insumoExistente) {
-                return res.status(404).json({ // 404
-                    success: false,
-                    message: 'Insumo no encontrado'
-                });
-            }
-            const insumoActualizado = await this.insumoModel.actualizarStock(id, stock); // Actualiza stock
-            res.json({ // Éxito
-                success: true,
-                message: 'Stock actualizado exitosamente',
-                data: insumoActualizado
-            });
-        } catch (error) {
-            console.error('Error en actualizarStock:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al actualizar el stock',
-                error: error.message
-            });
-        }
+  // Obtener insumos con bajo stock
+  async getBajoStock(req, res) {
+    try {
+      const insumos = await Insumo.find({
+        $expr: { $lte: ["$stock", "$stockMinimo"] },
+      }).lean();
+      res.json({ success: true, data: insumos });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener bajo stock",
+        error,
+      });
     }
+  }
 
-    async descontarStock(req, res) { // Descuenta stock: PUT /:id/descontar
-        try {
-            const { id } = req.params; // ID
-            const { cantidad } = req.body; // Cantidad a restar
-            const insumoExistente = await this.insumoModel.getById(id); // Verifica
-            if (!insumoExistente) {
-                return res.status(404).json({ // 404
-                    success: false,
-                    message: 'Insumo no encontrado'
-                });
-            }
-            if (isNaN(parseInt(cantidad)) || parseInt(cantidad) <= 0) { // Valida cantidad
-                return res.status(400).json({ // 400
-                    success: false,
-                    message: 'La cantidad debe ser un número mayor a 0'
-                });
-            }
-            const insumoActualizado = await this.insumoModel.descontarStock(id, cantidad); // Descuenta
-            res.json({ // Éxito
-                success: true,
-                message: 'Stock descontado exitosamente',
-                data: insumoActualizado
-            });
-        } catch (error) {
-            console.error('Error en descontarStock:', error); // Log
-            if (error.message === 'Stock insuficiente') { // Específico
-                res.status(400).json({ // 400
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({ // 500
-                    success: false,
-                    message: 'Error al descontar el stock',
-                    error: error.message
-                });
-            }
-        }
+  // Obtener alertas
+  async getAlertas(req, res) {
+    try {
+      const insumos = await Insumo.find({
+        $expr: { $lte: ["$stock", "$stockMinimo"] },
+      }).lean();
+      const alertas = insumos.map((i) => ({
+        id: i._id,
+        nombre: i.nombre,
+        stockActual: i.stock,
+        stockMinimo: i.stockMinimo,
+        estado: i.estado,
+        proveedor: i.proveedor,
+      }));
+      res.json({ success: true, data: alertas });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error al obtener alertas", error });
     }
+  }
 
-    async getAlertas(req, res) { // Obtiene alertas de stock: GET /alertas
-        try {
-            const alertas = await this.insumoModel.getAlertas(); // Llama modelo
-            res.json({ // Éxito
-                success: true,
-                data: alertas,
-                total: alertas.length
-            });
-        } catch (error) {
-            console.error('Error en getAlertas:', error); // Log
-            res.status(500).json({ // 500
-                success: false,
-                message: 'Error al obtener alertas de stock',
-                error: error.message
-            });
-        }
-    }
+  // Actualizar stock
+  async actualizarStock(req, res) {
+    try {
+      const { id } = req.params;
+      const { nuevoStock } = req.body;
+      const insumo = await Insumo.findById(id);
+      if (!insumo)
+        return res
+          .status(404)
+          .json({ success: false, message: "Insumo no encontrado" });
 
-    async delete(req, res) { // Elimina insumo: DELETE /:id
-        try {
-            const { id } = req.params; // ID
-            const resultado = await this.insumoModel.delete(id); // Elimina
-            res.json({ // Éxito
-                success: true,
-                message: 'Insumo eliminado exitosamente',
-                data: resultado
-            });
-        } catch (error) {
-            console.error('Error en delete insumo:', error); // Log
-            if (error.message === 'Insumo no encontrado') { // 404
-                res.status(404).json({
-                    success: false,
-                    message: error.message
-                });
-            } else {
-                res.status(500).json({ // 500
-                    success: false,
-                    message: 'Error al eliminar el insumo',
-                    error: error.message
-                });
-            }
-        }
+      const stockNumero = Number(nuevoStock);
+      if (Number.isNaN(stockNumero)) {
+        return res.status(400).json({
+          success: false,
+          message: "El nuevo stock debe ser numérico",
+        });
+      }
+
+      insumo.stock = stockNumero;
+      insumo.estado = determinarEstado(insumo.stock, insumo.stockMinimo);
+      insumo.ultimaActualizacion = new Date();
+
+      await insumo.save();
+      res.json({ success: true, data: insumo });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error al actualizar stock", error });
     }
+  }
+
 }
 
-export default InsumosController; // Exporta
+const determinarEstado = (stock, stockMinimo) => {
+  if (stock === 0) return "sin_stock";
+  if (stock <= stockMinimo) return "bajo_stock";
+  return "disponible";
+};
+
+export default new InsumosController();

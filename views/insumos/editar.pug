@@ -14,7 +14,8 @@ block content
       .card
         .card-body
           if insumo
-            form#insumoForm(action=`/api/insumos/${insumo.id}`, method="POST")
+            - const insumoId = insumo && insumo._id ? insumo._id.toString() : ''
+            form#insumoForm(action=`/api/insumos/${insumoId}`, method="POST", data-insumo-id=insumoId)
               input(type="hidden", name="_method", value="PUT")
               .mb-3
                 label.form-label(for="nombre") Nombre
@@ -51,26 +52,50 @@ block content
         i.fas.fa-arrow-left.me-2
         | Volver
     script.
-      document.getElementById('insumoForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
-        if (!data.unidadMedida) delete data.unidadMedida;
-        if (!data.proveedor) delete data.proveedor;
-        try {
-          const response = await fetch(`/api/insumos/${#{insumo.id}}`, {
-            method: data._method || 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key]) => key !== '_method')))
-          });
-          const result = await response.json();
-          if (result.success) {
-            alert('Insumo actualizado exitosamente');
-            window.location.href = '/insumos';
-          } else {
-            alert(`Error: ${result.message}`);
+      const form = document.getElementById('insumoForm');
+      if (form) {
+        const insumoId = form.dataset.insumoId || '';
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData);
+
+          delete data._method;
+
+          if (data.stock !== undefined) {
+            data.stock = Number(data.stock);
+            if (Number.isNaN(data.stock)) {
+              alert('Stock debe ser un número válido.');
+              return;
+            }
           }
-        } catch (error) {
-          alert('Error al actualizar el insumo');
-        }
-      });
+
+          if (data.stockMinimo !== undefined) {
+            data.stockMinimo = Number(data.stockMinimo);
+            if (Number.isNaN(data.stockMinimo)) {
+              alert('Stock mínimo debe ser un número válido.');
+              return;
+            }
+          }
+
+          if (!data.unidadMedida) delete data.unidadMedida;
+          if (!data.proveedor) delete data.proveedor;
+
+          try {
+            const response = await fetch(`/api/insumos/${insumoId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            if (result.success) {
+              alert('Insumo actualizado exitosamente');
+              window.location.href = '/insumos';
+            } else {
+              alert(`Error: ${result.message}`);
+            }
+          } catch (error) {
+            alert('Error al actualizar el insumo');
+          }
+        });
+      }

@@ -1,57 +1,103 @@
-import express from 'express'; // Express
-import TareasController from '../controllers/tareasController.js'; // Controlador
-import ValidationMiddleware from '../middleware/validation.js'; // Validaciones
+import express from 'express';
+import TareasController from '../controllers/tareasController.js';
+import ValidationMiddleware from '../middleware/validation.js';
 
-const router = express.Router(); // Router tareas
-const tareasController = new TareasController(); // Instancia
+const router = express.Router();
+const tareasController = new TareasController();
 
-const validarTarea = (req, res, next) => { // Middleware: valida create/update tareas
-    const { titulo, descripcion, area, estado, prioridad, empleadoAsignado, pedidoAsociado, observaciones } = req.body; // Campos
+// Middleware de validación de tareas
+const validarTarea = (req, res, next) => {
+  const {
+    titulo,
+    descripcion,
+    area,
+    estado,
+    prioridad,
+    empleadoAsignado,
+    pedidoAsociado,
+    observaciones,
+  } = req.body;
 
-    if (req.method === 'PUT' && Object.keys(req.body).length === 0) { // PUT vacío
-        return res.status(400).json({ success: false, message: 'Body vacío: proporcione al menos un campo.' });
-    }
+  if (req.method === 'PUT' && Object.keys(req.body).length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: 'Body vacío: proporcione al menos un campo.' });
+  }
 
-    if (req.method === 'PUT') { // PUT sin válidos
-        const camposValidos = [titulo, descripcion, area, estado, prioridad, empleadoAsignado, pedidoAsociado, observaciones]
-            .some(f => f !== undefined);
-        if (!camposValidos) {
-            return res.status(400).json({ success: false, message: 'Debe enviar al menos un campo válido.' });
-        }
+  if (req.method === 'PUT') {
+    const camposValidos = [
+      titulo,
+      descripcion,
+      area,
+      estado,
+      prioridad,
+      empleadoAsignado,
+      pedidoAsociado,
+      observaciones,
+    ].some((f) => f !== undefined);
+    if (!camposValidos) {
+      return res
+        .status(400)
+        .json({ success: false, message: 'Debe enviar al menos un campo válido.' });
     }
+  }
 
-    if (area && !['gestion_pedidos', 'control_inventario'].includes(area)) { // Área inválida
-        return res.status(400).json({ success: false, message: 'Área debe ser: gestion_pedidos, control_inventario' });
-    }
-    if (estado && !['pendiente', 'en_proceso', 'finalizada'].includes(estado)) { // Estado inválido
-        return res.status(400).json({ success: false, message: 'Estado debe ser: pendiente, en_proceso, finalizada' });
-    }
-    if (prioridad && !['alta', 'media', 'baja'].includes(prioridad)) { // Prioridad inválida
-        return res.status(400).json({ success: false, message: 'Prioridad debe ser: alta, media, baja' });
-    }
-    next(); // Continúa
+  if (area && !['gestion_pedidos', 'control_inventario'].includes(area)) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: 'Área debe ser: gestion_pedidos, control_inventario',
+      });
+  }
+  if (estado && !['pendiente', 'en_proceso', 'finalizada'].includes(estado)) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: 'Estado debe ser: pendiente, en_proceso, finalizada',
+      });
+  }
+  if (prioridad && !['alta', 'media', 'baja'].includes(prioridad)) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message: 'Prioridad debe ser: alta, media, baja',
+      });
+  }
+  next();
 };
 
-// GET con filtros (query)
-router.get('/', (req, res) => tareasController.getAll(req, res)); // GET /tareas: todas con filtros query
-router.get('/area/:area', (req, res) => tareasController.getByArea(req, res)); // GET /tareas/area/:area: por área
-router.get('/:id', (req, res) => tareasController.getById(req, res)); // GET /tareas/:id: una
+// --- RUTAS CRUD ---
 
-router.post('/',
-    ValidationMiddleware.validarCamposRequeridos(['titulo', 'area']), // Obligatorios
-    validarTarea, // Específicos
-    (req, res) => tareasController.create(req, res) // POST /tareas: crea
+// GET /tareas?estado=pendiente&area=gestion_pedidos
+router.get('/', (req, res) => tareasController.getAll(req, res));
+
+// GET /tareas/area/:area
+router.get('/area/:area', (req, res) => tareasController.getByArea(req, res));
+
+// GET /tareas/:id
+router.get('/:id', (req, res) => tareasController.getById(req, res));
+
+// POST /tareas
+router.post(
+  '/',
+  ValidationMiddleware.validarCamposRequeridos(['titulo', 'area']),
+  validarTarea,
+  (req, res) => tareasController.create(req, res)
 );
 
-router.put('/:id',
-    validarTarea, // Valida
-    (req, res) => tareasController.update(req, res) // PUT /tareas/:id: actualiza
-);
+// PUT /tareas/:id
+router.put('/:id', validarTarea, (req, res) => tareasController.update(req, res));
 
-// Transiciones de estado
-router.patch('/:id/iniciar', (req, res) => tareasController.iniciar(req, res)); // PATCH /tareas/:id/iniciar: inicia
-router.patch('/:id/finalizar', (req, res) => tareasController.finalizar(req, res)); // PATCH /tareas/:id/finalizar: finaliza
+// PATCH /tareas/:id/iniciar
+router.patch('/:id/iniciar', (req, res) => tareasController.iniciar(req, res));
 
-router.delete('/:id', (req, res) => tareasController.delete(req, res)); // DELETE /tareas/:id: elimina
+// PATCH /tareas/:id/finalizar
+router.patch('/:id/finalizar', (req, res) => tareasController.finalizar(req, res));
 
-export default router; // Exporta
+// DELETE /tareas/:id
+router.delete('/:id', (req, res) => tareasController.delete(req, res));
+
+export default router;

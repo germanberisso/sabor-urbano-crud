@@ -1,98 +1,158 @@
-import TareaModel from '../models/Tarea.js'; // Importa modelo Tarea
+// SOLUCIÓN DEFINITIVA (1/3): Importamos la CLASE TareaModel, no el modelo Mongoose directamente.
+import TareaModel from "../models/Tarea.js";
 
-class TareasController { // Controlador para tareas
-    constructor() { // Inicializa
-        this.tareaModel = new TareaModel(); // Instancia modelo
-    }
+// SOLUCIÓN DEFINITIVA (2/3): Creamos una instancia de TareaModel para usar sus métodos.
+// Esto centraliza la lógica de la base de datos en el modelo, como la arquitectura pretende.
+const tareaModel = new TareaModel();
 
-    async getAll(req, res) { // Todas con filtros: GET /?filtros=...
-        try {
-            const tareas = await this.tareaModel.filtrar(req.query); // Aplica filtros del query al modelo
-            res.json({ success: true, total: tareas.length, data: tareas }); // Éxito con conteo
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al obtener tareas', error: error.message }); // 500
-        }
+class TareasController {
+  // Obtener todas las tareas (con filtros opcionales)
+  async getAll(req, res) {
+    try {
+      const filtros = { ...req.query };
+      // Usamos el método de la instancia de TareaModel
+      const tareas = await tareaModel.filtrar(filtros);
+      res.json({ success: true, total: tareas.length, data: tareas });
+    } catch (error) {
+      console.error("❌ Error en TareasController.getAll:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener tareas",
+        error: error.message,
+      });
     }
+  }
 
-    async getById(req, res) { // Por ID: GET /:id
-        try {
-            const tarea = await this.tareaModel.getById(req.params.id); // Busca
-            if (!tarea) return res.status(404).json({ success: false, message: 'Tarea no encontrada' }); // 404
-            res.json({ success: true, data: tarea }); // Éxito
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al obtener la tarea', error: error.message }); // 500
-        }
+  // Obtener una tarea por ID
+  async getById(req, res) {
+    try {
+      const tarea = await tareaModel.getById(req.params.id);
+      if (!tarea)
+        return res
+          .status(404)
+          .json({ success: false, message: "Tarea no encontrada" });
+      res.json({ success: true, data: tarea });
+    } catch (error) {
+      console.error("❌ Error en TareasController.getById:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener la tarea",
+        error: error.message,
+      });
     }
+  }
 
-    async getByArea(req, res) { // Por área: GET /area/:area (usa filtrar internamente)
-        try {
-            const tareas = await this.tareaModel.filtrar({ area: req.params.area }); // Filtra por área
-            res.json({ success: true, total: tareas.length, data: tareas }); // Éxito
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al filtrar por área', error: error.message }); // 500
-        }
+  // Obtener tareas por área
+  async getByArea(req, res) {
+    try {
+      const tareas = await tareaModel.filtrar({ area: req.params.area });
+      res.json({ success: true, total: tareas.length, data: tareas });
+    } catch (error) {
+      console.error("❌ Error en TareasController.getByArea:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al filtrar por área",
+        error: error.message,
+      });
     }
+  }
 
-    async create(req, res) { // Crea: POST /
-        try {
-            const nueva = await this.tareaModel.create(req.body); // Crea con body
-            res.status(201).json({ success: true, message: 'Tarea creada', data: nueva }); // 201
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al crear tarea', error: error.message }); // 500
-        }
+  // Crear nueva tarea
+  async create(req, res) {
+    try {
+      const guardada = await tareaModel.create(req.body);
+      res
+        .status(201)
+        .json({ success: true, message: "Tarea creada", data: guardada });
+    } catch (error) {
+      // Este log te mostrará el error de validación de Mongoose en la consola si ocurre.
+      console.error("❌ Error detallado al crear tarea:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al crear tarea",
+        error: error.message,
+      });
     }
+  }
 
-    async update(req, res) { // Actualiza: PUT /:id
-        try {
-            const actualizada = await this.tareaModel.update(req.params.id, req.body); // Actualiza
-            res.json({ success: true, message: 'Tarea actualizada', data: actualizada }); // Éxito
-        } catch (error) {
-            if (error.message === 'Tarea no encontrada') { // 404
-                res.status(404).json({ success: false, message: error.message });
-            } else {
-                res.status(500).json({ success: false, message: 'Error al actualizar tarea', error: error.message }); // 500
-            }
-        }
+  // Actualizar una tarea existente
+  async update(req, res) {
+    try {
+      const actualizada = await tareaModel.update(req.params.id, req.body);
+      if (!actualizada)
+        return res
+          .status(404)
+          .json({ success: false, message: "Tarea no encontrada" });
+      res.json({
+        success: true,
+        message: "Tarea actualizada",
+        data: actualizada,
+      });
+    } catch (error) {
+      console.error("❌ Error detallado al actualizar tarea:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error al actualizar tarea",
+        error: error.message,
+      });
     }
+  }
 
-    async iniciar(req, res) { // Inicia tarea: PATCH /:id/iniciar
-        try {
-            const tarea = await this.tareaModel.iniciar(req.params.id); // Cambia estado a en_proceso
-            res.json({ success: true, message: 'Tarea iniciada', data: tarea }); // Éxito
-        } catch (error) {
-            if (error.message === 'Tarea no encontrada') { // 404
-                res.status(404).json({ success: false, message: error.message });
-            } else {
-                res.status(500).json({ success: false, message: 'Error al iniciar tarea', error: error.message }); // 500
-            }
-        }
+  // Iniciar tarea (cambia estado a "en_proceso")
+  async iniciar(req, res) {
+    try {
+      const tarea = await tareaModel.iniciar(req.params.id);
+      if (!tarea)
+        return res
+          .status(404)
+          .json({ success: false, message: "Tarea no encontrada" });
+      res.json({ success: true, message: "Tarea iniciada", data: tarea });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error al iniciar tarea",
+        error: error.message,
+      });
     }
+  }
 
-    async finalizar(req, res) { // Finaliza: PATCH /:id/finalizar
-        try {
-            const tarea = await this.tareaModel.finalizar(req.params.id); // Cambia a finalizada
-            res.json({ success: true, message: 'Tarea finalizada', data: tarea }); // Éxito
-        } catch (error) {
-            if (error.message === 'Tarea no encontrada') { // 404
-                res.status(404).json({ success: false, message: error.message });
-            } else {
-                res.status(500).json({ success: false, message: 'Error al finalizar tarea', error: error.message }); // 500
-            }
-        }
+  // Finalizar tarea (cambia estado a "finalizada")
+  async finalizar(req, res) {
+    try {
+      const tarea = await tareaModel.finalizar(req.params.id);
+      if (!tarea)
+        return res
+          .status(404)
+          .json({ success: false, message: "Tarea no encontrada" });
+      res.json({ success: true, message: "Tarea finalizada", data: tarea });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error al finalizar tarea",
+        error: error.message,
+      });
     }
+  }
 
-    async delete(req, res) { // Elimina: DELETE /:id
-        try {
-            const eliminada = await this.tareaModel.delete(req.params.id); // Elimina
-            res.json({ success: true, message: 'Tarea eliminada', data: eliminada }); // Éxito
-        } catch (error) {
-            if (error.message === 'Tarea no encontrada') { // 404
-                res.status(404).json({ success: false, message: error.message });
-            } else {
-                res.status(500).json({ success: false, message: 'Error al eliminar tarea', error: error.message }); // 500
-            }
-        }
+  // Eliminar tarea
+  async delete(req, res) {
+    try {
+      const eliminada = await tareaModel.delete(req.params.id);
+      if (!eliminada)
+        return res
+          .status(404)
+          .json({ success: false, message: "Tarea no encontrada" });
+      res.json({ success: true, message: "Tarea eliminada", data: eliminada });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error al eliminar tarea",
+        error: error.message,
+      });
     }
+  }
 }
 
-export default TareasController; // Exporta
+// SOLUCIÓN DEFINITIVA (3/3): Exportamos la CLASE, no una instancia.
+// Esto permite que `routes/tareas.js` pueda hacer `new TareasController()`.
+export default TareasController;
