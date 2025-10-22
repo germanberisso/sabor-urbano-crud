@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   - var page = 'insumos'
-  
+ 
   .row.mb-4
     .col-12
       .d-flex.justify-content-between.align-items-center
@@ -32,6 +32,8 @@ block content
                     th Stock
                     th Stock Mínimo
                     th Unidad
+                    // --- 👇 NUEVA COLUMNA ---
+                    th Estado 
                     th Acciones
                 tbody
                   each insumo in insumos
@@ -44,6 +46,13 @@ block content
                       td= insumo.stock
                       td= insumo.stockMinimo
                       td= insumo.unidadMedida || 'N/A'
+                      
+                      // --- 👇 NUEVA CELDA CON BADGE DE ESTADO ---
+                      td
+                        - var estadoClass = insumo.estado === 'disponible' ? 'bg-success' : insumo.estado === 'bajo_stock' ? 'bg-warning' : 'bg-danger'
+                        - var estadoTexto = insumo.estado.replace('_', ' ') // Reemplaza guion bajo por espacio
+                        span.badge(class=estadoClass, style="text-transform: capitalize;")= estadoTexto
+                      
                       td
                         .btn-group(role="group")
                           a.btn.btn-sm.btn-outline-primary(href=`/api/insumos/${insumoId}`, target="_blank", title="Ver")
@@ -52,6 +61,7 @@ block content
                             i.fas.fa-edit
                           button.btn.btn-sm.btn-outline-danger(data-id=insumoId, onclick="eliminarInsumo(this)", title="Eliminar")
                             i.fas.fa-trash
+    // Script de eliminar (sin cambios)
     script.
       async function eliminarInsumo(button) {
         if (confirm('¿Estás seguro de eliminar este insumo?')) {
@@ -66,7 +76,8 @@ block content
               alert(`Error: ${result.message}`);
             }
           } catch (error) {
-            alert('Error al eliminar el insumo');
+            console.error('Error al eliminar insumo:', error);
+            alert('Error de conexión al eliminar el insumo');
           }
         }
       }
