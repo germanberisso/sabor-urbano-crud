@@ -31,6 +31,7 @@ block content
                     th Estado
                     th Prioridad
                     th Empleado Asignado
+                    th Pedido Asociado 
                     th Fecha Creación
                     th Acciones
                 tbody
@@ -50,38 +51,51 @@ block content
                       td
                         span.badge(class= tarea.prioridad === 'alta' ? 'bg-danger' : tarea.prioridad === 'media' ? 'bg-warning' : 'bg-secondary')= tarea.prioridad
                       td
-                        //- SOLUCIÓN: Como ahora `empleadoAsignado` es un objeto populado,
-                        //- accedemos a sus propiedades para mostrar el nombre y apellido.
                         if tarea.empleadoAsignado
                           i.fas.fa-user.me-1
                           | #{tarea.empleadoAsignado.nombre} #{tarea.empleadoAsignado.apellido}
                         else
                           span.text-muted Sin asignar
+                      
+                      // Mostrar info del Pedido Asociado (si existe)
                       td
-                        small= new Date(tarea.fechaCreacion).toLocaleDateString('es-AR')
+                        //- Quitamos el comentario inline de aquí
+                        if tarea.pedidoAsociado && typeof tarea.pedidoAsociado === 'object' 
+                          - var clienteNombre = tarea.pedidoAsociado.cliente && tarea.pedidoAsociado.cliente.nombre ? tarea.pedidoAsociado.cliente.nombre : 'Presencial'
+                          i.fas.fa-shopping-bag.me-1
+                          | ##{tarea.pedidoAsociado.numeroOrden || 'ID:' + tarea.pedidoAsociado._id} (#{clienteNombre})
+                        else if tarea.pedidoAsociado 
+                          small= 'ID: ' + tarea.pedidoAsociado
+                        else
+                          span.text-muted Sin pedido
+
+                      td
+                        small= tarea.fechaCreacion ? new Date(tarea.fechaCreacion).toLocaleDateString('es-AR') : 'N/A'
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/tareas/${tarea._id}`, target="_blank", title="Ver")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/tareas/${tarea._id}`, target="_blank", title="Ver JSON")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/tareas/editar/${tarea._id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/tareas/editar/${tarea._id}`, title="Editar Tarea")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=tarea._id, onclick="eliminarTarea(this)", title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=tarea._id, onclick="eliminarTarea(this)", title="Eliminar Tarea")
                             i.fas.fa-trash
+    //- Script JS para el botón eliminar
     script.
       async function eliminarTarea(button) {
-        if (confirm('¿Estás seguro de eliminar esta tarea?')) {
-          const id = button.getAttribute('data-id');
+        const id = button.getAttribute('data-id');
+        if (confirm(`¿Estás seguro de eliminar la tarea ID: ${id}?`)) {
           try {
-            const response = await fetch(`/api/tareas/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/tareas/${id}`, { method: 'DELETE' }); 
             const result = await response.json();
             if (response.ok && result.success) {
               alert('Tarea eliminada exitosamente');
-              location.reload();
+              location.reload(); 
             } else {
-              alert(`Error: ${result.message}`);
+              alert(`Error al eliminar: ${result.message || 'Error desconocido'}`);
             }
           } catch (error) {
-            alert('Error al eliminar la tarea');
+            console.error('Error en fetch DELETE:', error);
+            alert('Error de conexión al eliminar la tarea.');
           }
         }
       }

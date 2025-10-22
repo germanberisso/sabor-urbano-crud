@@ -14,10 +14,9 @@ const tareaSchema = new mongoose.Schema({
     enum: ["baja", "media", "alta"],
     default: "media",
   },
-  // SOLUCIÓN (1/4): Corregimos el tipo de dato.
-  // Para referenciar a otra colección en MongoDB, se debe usar ObjectId.
-  // El error silencioso ocurría porque se intentaba guardar un texto (el ID del empleado) en un campo de tipo Número.
-  empleadoAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Empleado', default: null },  
+  empleadoAsignado: { type: mongoose.Schema.Types.ObjectId, ref: 'Empleado', default: null },
+  // Definición correcta de la referencia a 'Pedido'
+  pedidoAsociado: { type: mongoose.Schema.Types.ObjectId, ref: 'Pedido', default: null },
   observaciones: { type: String, default: "" },
   fechaCreacion: { type: Date, default: Date.now },
   fechaInicio: { type: Date, default: null },
@@ -26,105 +25,132 @@ const tareaSchema = new mongoose.Schema({
 
 const Tarea = mongoose.model("Tarea", tareaSchema);
 
-// Mantenemos la estructura de clase `TareaModel`
 export default class TareaModel {
   async getAll() {
-    // SOLUCIÓN (2/4): Usamos .populate() para traer los datos del empleado referenciado
-    // en lugar de solo su ID. Esto nos permitirá mostrar su nombre en la vista.
-    return await Tarea.find().populate('empleadoAsignado').lean();
+    try {
+      // Poblar ambos campos referenciados
+      return await Tarea.find()
+                      .populate('empleadoAsignado')
+                      .populate('pedidoAsociado')
+                      .lean();
+    } catch (error) {
+      console.error("❌ Error en TareaModel.getAll:", error);
+      throw error;
+    }
   }
 
   async getById(id) {
-    return await Tarea.findById(id).populate('empleadoAsignado').lean();
+    try {
+      // Poblar ambos campos referenciados
+      return await Tarea.findById(id)
+                     .populate('empleadoAsignado')
+                     .populate('pedidoAsociado')
+                     .lean();
+    } catch (error) {
+      console.error(`❌ Error en TareaModel.getById(${id}):`, error);
+      throw error;
+    }
   }
 
   async filtrar(filtros) {
-    const query = {};
+    try {
+      const query = {};
+      if (filtros.estado) query.estado = filtros.estado;
+      if (filtros.prioridad) query.prioridad = filtros.prioridad;
+      if (filtros.area) query.area = filtros.area;
+      if (filtros.empleadoAsignado) query.empleadoAsignado = filtros.empleadoAsignado;
+      // Añadir filtro por pedidoAsociado
+      if (filtros.pedidoAsociado) query.pedidoAsociado = filtros.pedidoAsociado;
 
-    if (filtros.estado) query.estado = filtros.estado;
-    if (filtros.prioridad) query.prioridad = filtros.prioridad;
-    if (filtros.area) query.area = filtros.area;
-    if (filtros.empleadoAsignado)
-      query.empleadoAsignado = filtros.empleadoAsignado;
+      if (filtros.fechaDesde || filtros.fechaHasta) {
+        query.fechaCreacion = {};
+        if (filtros.fechaDesde) query.fechaCreacion.$gte = new Date(filtros.fechaDesde);
+        if (filtros.fechaHasta) query.fechaCreacion.$lte = new Date(filtros.fechaHasta);
+      }
 
-    // ... (resto de la lógica de filtros)
-    if (filtros.fechaDesde || filtros.fechaHasta) {
-      query.fechaCreacion = {};
-      if (filtros.fechaDesde)
-        query.fechaCreacion.$gte = new Date(filtros.fechaDesde);
-      if (filtros.fechaHasta)
-        query.fechaCreacion.$lte = new Date(filtros.fechaHasta);
+      // Poblar ambos campos referenciados en los resultados filtrados
+      return await Tarea.find(query)
+                      .populate('empleadoAsignado')
+                      .populate('pedidoAsociado')
+                      .lean();
+    } catch(error) {
+      console.error("❌ Error en TareaModel.filtrar:", error);
+      throw error;
     }
-
-    return await Tarea.find(query).populate('empleadoAsignado').lean();
   }
 
   async create(datos) {
-    // SOLUCIÓN (3/4): Eliminamos `parseInt`. Mongoose se encarga de convertir
-    // el string del ID a ObjectId. Si el valor es un string vacío, lo convertimos a `null`.
-    const tarea = new Tarea({
-      titulo: datos.titulo,
-      descripcion: datos.descripcion,
-      area: datos.area,
-      estado: datos.estado || "pendiente",
-      prioridad: datos.prioridad || "media",
-      empleadoAsignado: datos.empleadoAsignado || null,
-      observaciones: datos.observaciones || "",
-    });
-    return await tarea.save();
+    try {
+      const tarea = new Tarea({
+        titulo: datos.titulo,
+        descripcion: datos.descripcion,
+        area: datos.area,
+        estado: datos.estado || "pendiente",
+        prioridad: datos.prioridad || "media",
+        empleadoAsignado: datos.empleadoAsignado || null,
+        // Asegurar que se guarda el pedido asociado (o null si viene vacío)
+        pedidoAsociado: datos.pedidoAsociado || null,
+        observaciones: datos.observaciones || "",
+      });
+      const savedTarea = await tarea.save();
+      return savedTarea;
+    } catch(error) {
+      console.error("❌ Error en TareaModel.create:", error);
+      throw error;
+    }
   }
 
   async update(id, datos) {
-    const camposPermitidos = [
-      "titulo",
-      "descripcion",
-      "area",
-      "estado",
-      "prioridad",
-      "empleadoAsignado",
-      "observaciones",
-    ];
+    try {
+      const camposPermitidos = [
+        "titulo", "descripcion", "area", "estado", "prioridad",
+        "empleadoAsignado", "pedidoAsociado", "observaciones", // Incluir pedidoAsociado
+      ];
 
-    const actualizacion = {};
-    for (const campo of camposPermitidos) {
-      if (datos[campo] !== undefined) {
-        if (campo === 'empleadoAsignado') {
-          actualizacion[campo] = datos[campo] || null; // Manejar string vacío
-        } else {
-          actualizacion[campo] = datos[campo];
+      const actualizacion = {};
+      for (const campo of camposPermitidos) {
+        if (datos[campo] !== undefined) {
+          // Tratar ambos campos de referencia igual (asignar null si vienen vacíos)
+          if (campo === 'empleadoAsignado' || campo === 'pedidoAsociado') {
+            actualizacion[campo] = datos[campo] || null;
+          } else {
+            actualizacion[campo] = datos[campo];
+          }
         }
       }
+      const updatedTarea = await Tarea.findByIdAndUpdate(id, actualizacion, { new: true, lean: true });
+      return updatedTarea;
+    } catch(error) {
+       console.error(`❌ Error en TareaModel.update(${id}):`, error);
+       throw error;
     }
-
-    return await Tarea.findByIdAndUpdate(id, actualizacion, {
-      new: true,
-      lean: true,
-    });
   }
 
   async iniciar(id) {
-    return await Tarea.findByIdAndUpdate(
-      id,
-      {
-        estado: "en_proceso",
-        fechaInicio: new Date(),
-      },
-      { new: true, lean: true }
-    );
+    try {
+      return await Tarea.findByIdAndUpdate(id, { estado: "en_proceso", fechaInicio: new Date() }, { new: true, lean: true });
+    } catch(error) {
+      console.error(`❌ Error en TareaModel.iniciar(${id}):`, error);
+      throw error;
+    }
   }
 
   async finalizar(id) {
-    return await Tarea.findByIdAndUpdate(
-      id,
-      {
-        estado: "finalizada",
-        fechaFinalizacion: new Date(),
-      },
-      { new: true, lean: true }
-    );
+    try {
+      return await Tarea.findByIdAndUpdate(id, { estado: "finalizada", fechaFinalizacion: new Date() }, { new: true, lean: true });
+    } catch (error) {
+      console.error(`❌ Error en TareaModel.finalizar(${id}):`, error);
+      throw error;
+    }
   }
 
   async delete(id) {
-    return await Tarea.findByIdAndDelete(id).lean();
+    try {
+      const deleted = await Tarea.findByIdAndDelete(id).lean();
+      return deleted;
+    } catch(error) {
+      console.error(`❌ Error en TareaModel.delete(${id}):`, error);
+      throw error;
+    }
   }
 }

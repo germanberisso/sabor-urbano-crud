@@ -125,6 +125,20 @@
       "fechaCreacion": "2025-09-20T03:05:13.989Z",
       "fechaInicio": null,
       "fechaFinalizacion": null
+    },
+    {
+      "id": 10,
+      "titulo": "tuyytuyt",
+      "descripcion": "tyutyuty",
+      "area": "control_inventario",
+      "estado": "en_proceso",
+      "prioridad": "baja",
+      "empleadoAsignado": 68,
+      "pedidoAsociado": 35443,
+      "observaciones": "rty",
+      "fechaCreacion": "2025-10-22T04:48:42.650Z",
+      "fechaInicio": null,
+      "fechaFinalizacion": null
     }
   ]
 }
