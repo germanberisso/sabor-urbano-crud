@@ -7,19 +7,21 @@ block content
     .col-12
       h1.display-6
         i.fas.fa-edit.text-info.me-3
-        | Editar Pedido #{pedido.numeroOrden}
+        //- Usar _id si numeroOrden no siempre está disponible al renderizar
+        | Editar Pedido #{pedido.numeroOrden || pedido._id} 
 
   .row
     .col-lg-8
       .card
         .card-body
           // ------------------- CAMPOS INICIALES -------------------
-          - var nombreCliente = pedido.nombreCliente || (pedido.cliente && pedido.cliente.nombre) || ''
-          - var telefonoCliente = pedido.telefonoCliente || (pedido.cliente && pedido.cliente.telefono) || ''
-          - var direccionCliente = pedido.direccionCliente || (pedido.cliente && pedido.cliente.direccion) || ''
+          //- Usamos las variables mapeadas pasadas desde el controller
+          - var nombreCliente = pedido.nombreCliente || '' 
+          - var telefonoCliente = pedido.telefonoCliente || ''
+          - var direccionCliente = pedido.direccionCliente || ''
 
-          // data-pedido-id para usar en el submit
-          form#pedidoForm(data-pedido-id=pedido.id)
+          //- Usar pedido._id en data-pedido-id
+          form#pedidoForm(data-pedido-id=pedido._id) 
             // ------------------- TIPO DE PEDIDO -------------------
             .form-group.mb-3
               label(for="tipo") Tipo de Pedido
@@ -37,7 +39,6 @@ block content
                 option(value="local", selected=(pedido.plataforma==='local')) Local
 
             // ------------------- CAMPOS DELIVERY -------------------
-            // Se muestran solo si tipo = delivery
             div#deliveryFields(style=(pedido.tipo==='delivery' ? 'block' : 'none'))
               .form-group.mb-3
                 label(for="nombreCliente") Nombre Cliente
@@ -52,30 +53,32 @@ block content
             // ------------------- ITEMS DEL PEDIDO -------------------
             .form-group.mb-3
               label Items del Pedido
-              - var itemsPedido = Array.isArray(pedido.items) ? pedido.items : []
+              //- Usamos el mapa itemsMap pasado desde el controller para marcar seleccionados
               each producto in productos
-                - var match = itemsPedido.find(i => i && i.id === producto.id)
-                - var seleccionado = !!match
-                - var cantidad = match ? match.cantidad : 1
+                //- Usar producto._id para buscar en el mapa y en data-id
+                - var productoIdStr = String(producto._id) 
+                - var itemGuardado = pedido.itemsMap && pedido.itemsMap[productoIdStr]
+                - var seleccionado = !!itemGuardado 
+                - var cantidad = itemGuardado ? itemGuardado.cantidad : 1
                 .mb-2.d-flex.align-items-center
                   input.form-check-input.item-checkbox(
                     type="checkbox"
-                    data-id=producto.id
+                    data-id=producto._id 
                     data-precio=producto.precio
-                    id=`producto${producto.id}`
+                    id=`producto-${producto._id}` 
                     checked=seleccionado
                   )
-                  label.form-check-label.ms-2(for=`producto${producto.id}`) #{producto.nombre} - $#{producto.precio}
+                  label.form-check-label.ms-2(for=`producto-${producto._id}`) #{producto.nombre} - $#{producto.precio ? producto.precio.toFixed(2) : '?.??'}
                   input.form-control.item-cantidad.ms-2(
                     type="number"
                     min="1"
                     value=cantidad
-                    data-id=producto.id
+                    data-id=producto._id 
                     style="width:80px;"
                     disabled=!seleccionado
                   )
 
-            // ------------------- CAMPOS EXTRA (si ya los usás en editar) -------------------
+            // ------------------- CAMPOS EXTRA -------------------
             .form-group.mb-3
               label(for="estado") Estado
               select#estado.form-control(name="estado" required)
@@ -97,7 +100,7 @@ block content
             // ------------------- TOTAL -------------------
             .form-group
               label(for="total") Total
-              input#total.form-control(type="number" name="total" readonly value=pedido.total || 0)
+              input#total.form-control(type="number" name="total" readonly value=pedido.total ? pedido.total.toFixed(2) : '0.00' step="0.01")
 
             button.btn.btn-info.mt-3(type="submit")
               i.fas.fa-save.me-2
@@ -109,21 +112,39 @@ block content
 
   // ------------------- SCRIPT -------------------
   script.
-    (function () {
+    // Envolver en DOMContentLoaded para asegurar que todos los elementos existen
+    document.addEventListener('DOMContentLoaded', () => {
+    
       const pedidoForm = document.getElementById('pedidoForm');
-      const pedidoId = pedidoForm?.dataset?.pedidoId;
+      // Leer el ID del dataset del formulario
+      const pedidoId = pedidoForm?.dataset?.pedidoId; 
+      
+      // DEBUG: Verificar que obtenemos el ID correcto al cargar la página
+      console.log(`[editar.pug] ID del pedido a editar: ${pedidoId}`);
+      if (!pedidoId) {
+           console.error("[editar.pug] Error crítico: No se pudo obtener el ID del pedido del formulario.");
+           const submitButton = pedidoForm.querySelector('button[type="submit"]');
+           if(submitButton) submitButton.disabled = true;
+           alert("Error: No se pudo identificar el pedido a editar. Recargue la página.");
+           // return; // Podríamos detener aquí si es necesario
+      }
+
 
       const tipoSelect = document.getElementById('tipo');
       const plataformaSelect = document.getElementById('plataforma');
       const deliveryFields = document.getElementById('deliveryFields');
-
       const checkboxes = document.querySelectorAll('.item-checkbox');
       const totalInput = document.getElementById('total');
 
+      // Función auxiliar robusta para obtener input de cantidad
+      function getCantidadInput(id) {
+          return pedidoForm.querySelector(`.item-cantidad[data-id="${id}"]`);
+      }
+
+      // --- Lógica UI ---
       function actualizarFormulario() {
         const tipo = tipoSelect.value;
         const opciones = plataformaSelect.options;
-
         for (let i = 0; i < opciones.length; i++) {
           const opcion = opciones[i];
           if (tipo === 'presencial') {
@@ -131,111 +152,155 @@ block content
             if (opcion.value === 'local') opcion.selected = true;
           } else {
             opcion.disabled = opcion.value === 'local';
-            // si quedó "local" seleccionado al pasar a delivery, forzamos "propia"
-            if (opcion.value === 'propia' && !opcion.disabled && plataformaSelect.value === 'local') {
-              opcion.selected = true;
+            if (plataformaSelect.value === 'local' && opcion.value === 'propia' && !opcion.disabled) {
+               opcion.selected = true;
+            } else if (!plataformaSelect.querySelector('option:checked:not([disabled])')) {
+               const primeraOpcionValida = plataformaSelect.querySelector('option:not([disabled])');
+               if(primeraOpcionValida) primeraOpcionValida.selected = true;
             }
           }
         }
         deliveryFields.style.display = tipo === 'delivery' ? 'block' : 'none';
       }
+      if(tipoSelect) tipoSelect.addEventListener('change', actualizarFormulario);
+      actualizarFormulario(); // Llamada inicial
 
-      tipoSelect.addEventListener('change', actualizarFormulario);
-      actualizarFormulario();
-
-      function cantidadInputFor(id) {
-        return pedidoForm.querySelector(`.item-cantidad[data-id="${id}"]`);
-      }
-
+      // --- Cálculo de Total ---
       function calcularTotal() {
         let total = 0;
         checkboxes.forEach(cb => {
-          const id = cb.dataset.id;
-          const precio = parseFloat(cb.dataset.precio) || 0;
-          const qtyInput = cantidadInputFor(id);
-          if (cb.checked) {
-            const cant = Math.max(1, parseInt(qtyInput.value, 10) || 1);
-            total += cant * precio;
+          const id = cb.dataset.id; 
+          const cantidadInput = getCantidadInput(id); 
+          
+          if (cb.checked && cantidadInput) { 
+            const cantidad = parseInt(cantidadInput.value) || 1;
+            const precio = parseFloat(cb.dataset.precio);
+             if(!isNaN(precio) && !isNaN(cantidad)) { 
+                 total += cantidad * precio;
+             } else {
+                  console.warn(`[calcularTotal Editar] Precio o cantidad inválido para ID ${id}`);
+             }
           }
         });
-        totalInput.value = total;
+        if(totalInput) {
+             totalInput.value = total.toFixed(2); 
+        } else {
+             console.error("[calcularTotal Editar] No se encontró #total");
+        }
       }
 
-      // listeners de checkboxes/cantidades
+      // --- Event Listeners ---
       checkboxes.forEach(cb => {
-        const id = cb.dataset.id;
-        const qtyInput = cantidadInputFor(id);
-        cb.addEventListener('change', () => {
-          qtyInput.disabled = !cb.checked;
-          if (!cb.checked) qtyInput.value = 1;
-          calcularTotal();
-        });
-        qtyInput?.addEventListener('input', calcularTotal);
-      });
-
-      // cálculo inicial (con lo preseleccionado)
-      calcularTotal();
-
-      // Submit => POST a /pedidos/editar/:id (igual estilo que "nuevo")
-      pedidoForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        // armar items como JSON
-        const items = {};
-        checkboxes.forEach(cb => {
-          if (cb.checked) {
-            const id = cb.dataset.id;
-            const qty = Math.max(1, parseInt(cantidadInputFor(id).value, 10) || 1);
-            items[id] = { seleccionado: true, cantidad: qty };
-          }
-        });
-
-        if (Object.keys(items).length === 0) {
-          alert('Debe seleccionar al menos un producto');
-          return;
+        const id = cb.dataset.id; 
+        const cantidadInput = getCantidadInput(id); 
+        
+        if (!cantidadInput) {
+            console.error(`[Listeners Editar] Error Crítico: No se encontró input cantidad para ID: ${id}`);
+            return; 
         }
 
-        // campos base
+        cb.addEventListener('change', () => {
+          cantidadInput.disabled = !cb.checked;
+          if (!cb.checked) {
+              cantidadInput.value = 1; 
+          }
+          calcularTotal(); 
+        });
+
+        cantidadInput.addEventListener('input', calcularTotal); 
+      });
+
+      calcularTotal(); // Llamada inicial
+
+      // --- SUBMIT ---
+      pedidoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('[editar.pug] Evento submit detectado.');
+
+        if (!pedidoId) {
+             alert("Error crítico: No se puede actualizar el pedido sin su ID. Recargue la página.");
+             console.error("[Submit Editar] Falta pedidoId.");
+             return;
+        }
+
+        const items = {};
+        let itemsValidos = false;
+        checkboxes.forEach(cb => {
+          if (cb.checked) {
+            const id = cb.dataset.id; 
+            const cantidadInput = getCantidadInput(id); 
+            if (cantidadInput) {
+              const cantidad = parseInt(cantidadInput.value) || 1;
+               if (cantidad < 1) {
+                  alert(`La cantidad para el producto seleccionado debe ser al menos 1.`);
+                  throw new Error("Cantidad inválida detectada."); // Detener submit
+               }
+              items[id] = { seleccionado: true, cantidad: cantidad }; 
+              itemsValidos = true;
+            } else {
+                 console.error(`[Submit Editar] No se encontró input cantidad para ID ${id} seleccionado.`);
+            }
+          }
+        });
+        
+        console.log('[editar.pug] Objeto items construido:', JSON.stringify(items, null, 2));
+
         const data = {
           tipo: tipoSelect.value,
           plataforma: plataformaSelect.value,
-          items,
-          // estos campos extra están en el form de editar
-          estado: document.getElementById('estado')?.value || undefined,
-          tiempoEstimado: (() => {
-            const v = document.getElementById('tiempoEstimado')?.value;
-            return v ? Number(v) : undefined;
-          })(),
+          items, 
+          estado: document.getElementById('estado')?.value || undefined, 
+          tiempoEstimado: document.getElementById('tiempoEstimado')?.value || '', 
           observaciones: document.getElementById('observaciones')?.value || ''
         };
 
-        // datos de cliente si delivery
         if (data.tipo === 'delivery') {
           data.nombreCliente = pedidoForm.nombreCliente?.value || '';
-          data.telefonoCliente = pedidoForm.telefonoCliente?.value || '';
+          data.telefonoCliente = pedidoForm.telefonoCliente?.value || ''; 
           data.direccionCliente = pedidoForm.direccionCliente?.value || '';
         }
 
-        // (opcional) total solo display; el backend recalcula, pero lo mandamos por si lo usás
-        const t = parseFloat(totalInput.value);
-        if (!Number.isNaN(t)) data.total = t;
+        console.log('[editar.pug] Datos a enviar (fetch body):', JSON.stringify(data, null, 2));
 
         try {
-          const res = await fetch(`/pedidos/editar/${pedidoId}`, {
-            method: 'POST', // paralelo a "nuevo" que usa POST
+          const url = `/pedidos/editar/${pedidoId}`; 
+          const method = 'POST'; // Usamos POST como está definido en app.js
+          
+          console.log(`[editar.pug] Enviando FETCH ${method} a: ${url}`);
+
+          const res = await fetch(url, {
+            method: method, 
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
           });
-          const result = await res.json();
-          if (result.success) {
+
+          console.log(`[editar.pug] Respuesta recibida: Status ${res.status}, OK: ${res.ok}`);
+
+           let result;
+           const contentType = res.headers.get("content-type");
+           if (contentType && contentType.indexOf("application/json") !== -1) {
+               result = await res.json();
+               console.log('[editar.pug] Respuesta JSON del servidor:', result);
+           } else {
+               const textResponse = await res.text();
+               console.error('[editar.pug] La respuesta del servidor NO es JSON. Respuesta como texto:', textResponse);
+               alert(res.ok ? 'Respuesta inesperada del servidor.' : `Error ${res.status}: ${textResponse || 'Error del servidor. Revisa la consola.'}`);
+               return; // Detener
+           }
+
+          if (result && result.success === true) {
             alert('Pedido actualizado exitosamente');
-            window.location.href = '/pedidos';
+             console.log('[editar.pug] Redirigiendo a /pedidos');
+            window.location.href = '/pedidos'; // Redirigir en éxito
           } else {
-            alert(`Error: ${result.message}`);
+            const errorMessage = result?.message || 'Error desconocido al actualizar el pedido.';
+            alert(`Error al actualizar: ${errorMessage}`);
+            console.error(`[editar.pug] Error reportado por el backend: ${errorMessage}`);
           }
         } catch (err) {
-          console.error(err);
-          alert('Error al actualizar el pedido');
+          console.error('[editar.pug] Error en CATCH del fetch:', err.message);
+          alert(`Error al procesar la actualización: ${err.message}. Revisa la consola (F12).`);
         }
       });
-    })();
+
+    }); // Fin del DOMContentLoaded

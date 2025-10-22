@@ -37,9 +37,11 @@ block content
                 tbody
                   each pedido in pedidos
                     tr
-                      td= pedido.id
-                      td= pedido.nombreCliente
-                      td $#{pedido.total}
+                      //- Mostrar pedido._id
+                      td= pedido._id 
+                      //- Usamos nombreCliente que preparamos en el controller
+                      td= pedido.nombreCliente 
+                      td $#{pedido.total ? pedido.total.toFixed(2) : '0.00'}
                       td
                         span.badge(class= pedido.tipo === 'presencial' ? 'bg-info' : 'bg-primary')= pedido.tipo
                       td
@@ -47,31 +49,84 @@ block content
                       td
                         span.badge(class= pedido.estado === 'pendiente' ? 'bg-warning' : pedido.estado === 'en_preparacion' ? 'bg-primary' : pedido.estado === 'listo' ? 'bg-info' : pedido.estado === 'en_camino' ? 'bg-warning' : pedido.estado === 'entregado' ? 'bg-success' : 'bg-dark')= pedido.estado
                       td
-                        small= new Date(pedido.fechaCreacion).toLocaleDateString('es-AR')
+                        //- Asegurarnos que fechaCreacion es un objeto Date antes de formatear
+                        small= pedido.fechaCreacion ? new Date(pedido.fechaCreacion).toLocaleDateString('es-AR') : 'N/A'
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/pedidos/${pedido.id}`, target="_blank", title="Ver")
+                          //- Usar pedido._id para los enlaces
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/pedidos/${pedido._id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/pedidos/editar/${pedido.id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/pedidos/editar/${pedido._id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=pedido.id, onclick="eliminarPedido(this)", title="Eliminar")
+                          //- Usar pedido._id en data-id
+                          button.btn.btn-sm.btn-outline-danger(data-id=pedido._id, onclick="eliminarPedido(this)", title="Eliminar")
                             i.fas.fa-trash
+                            
+    //- Script con logs adicionales para depurar el DELETE
     script.
       async function eliminarPedido(button) {
-        if (confirm('¿Estás seguro de eliminar este pedido?')) {
-          const id = button.getAttribute('data-id');
+        // DEBUG: Verificar el elemento botón recibido
+        console.log('[eliminarPedido] Botón presionado:', button); 
+        
+        // Obtenemos el ID del atributo data-id
+        const id = button.getAttribute('data-id');
+        
+        // DEBUG: Verificar el ID obtenido ANTES de la validación
+        console.log(`[eliminarPedido] ID obtenido de data-id: '${id}' (Tipo: ${typeof id})`); 
+
+        if (!id || id === 'null' || id === 'undefined') { // Añadir chequeos explícitos
+            console.error('[eliminarPedido] Error Crítico: El ID obtenido es inválido o nulo.');
+            alert('Error: No se pudo obtener el ID del pedido.');
+            return;
+        }
+
+        if (confirm(`¿Estás seguro de eliminar el pedido ID: ${id}?`)) {
+          // DEBUG: Confirmar que pasamos la validación y el ID que se usará en la URL
+          const urlToDelete = `/api/pedidos/${id}`;
+          console.log(`[eliminarPedido] Confirmado. Enviando FETCH DELETE a: ${urlToDelete}`); 
+          
           try {
-            const response = await fetch(`/api/pedidos/${id}`, { method: 'DELETE' });
-            const result = await response.json();
-            if (result.success) {
+            const response = await fetch(urlToDelete, { method: 'DELETE' }); 
+            
+            console.log(`[eliminarPedido] Respuesta del servidor: Status ${response.status}, OK: ${response.ok}`);
+
+            // Intentar parsear como JSON SIEMPRE
+            let result = null;
+            try {
+                result = await response.json();
+                console.log("[eliminarPedido] Respuesta JSON parseada:", result);
+            } catch (e) {
+                console.error("[eliminarPedido] Error al parsear JSON de respuesta:", e);
+                // Si falla el parseo, intentar obtener texto (por si es un error HTML)
+                try {
+                    const textResponse = await response.text();
+                    console.error("[eliminarPedido] Respuesta como texto:", textResponse);
+                     alert(`Error ${response.status}: Respuesta inesperada del servidor. ${textResponse.substring(0, 100)}...`);
+                } catch (textError) {
+                     console.error("[eliminarPedido] No se pudo obtener ni JSON ni texto de la respuesta.");
+                     alert(`Error ${response.status}: Respuesta inválida del servidor.`);
+                }
+                return; // Detener si no pudimos parsear
+            }
+            
+            // Procesar el resultado JSON
+            if (result && result.success === true) { 
+              console.log("[eliminarPedido] Éxito. Recargando página...");
               alert('Pedido eliminado exitosamente');
               location.reload();
             } else {
-              alert(`Error: ${result.message}`);
+              // Mostrar mensaje del servidor si existe, o uno genérico
+              const errorMessage = result?.message || `Error ${response.status} al eliminar. Código ${result?.code || 'desconocido'}.`;
+              alert(`Error: ${errorMessage}`);
+              console.error(`[eliminarPedido] Error reportado por el backend al eliminar: ${errorMessage}`);
             }
           } catch (error) {
-            alert('Error al eliminar el pedido');
+            // Error de red u otro error en el fetch
+            console.error('[eliminarPedido] Error en CATCH del fetch:', error);
+            alert('Error de conexión al intentar eliminar el pedido. Revisa la consola.');
           }
+        } else {
+            console.log("[eliminarPedido] Eliminación cancelada por el usuario.");
         }
       }
   else
