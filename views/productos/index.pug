@@ -2,7 +2,7 @@ extends ../layout
 
 block content
   - var page = 'productos'
-  
+ 
   .row.mb-4
     .col-12
       .d-flex.justify-content-between.align-items-center
@@ -29,31 +29,31 @@ block content
                     th ID
                     th Nombre
                     th Stock
+                    th Acciones
                 tbody
                   each producto in productos
                     tr
-                      td= producto.id
+                      td= producto._id   
                       td= producto.nombre
                       td
                         if producto.stock
                           span.badge.bg-success En stock
                         else
                           span.badge.bg-danger Sin stock
-
                       td
                         .btn-group(role="group")
-                          a.btn.btn-sm.btn-outline-primary(href=`/api/productos/${producto.id}`, target="_blank", title="Ver")
+                          a.btn.btn-sm.btn-outline-primary(href=`/api/productos/${producto._id}`, target="_blank", title="Ver")
                             i.fas.fa-eye
-                          a.btn.btn-sm.btn-outline-warning(href=`/productos/editar/${producto.id}`, title="Editar")
+                          a.btn.btn-sm.btn-outline-warning(href=`/productos/editar/${producto._id}`, title="Editar")
                             i.fas.fa-edit
-                          button.btn.btn-sm.btn-outline-danger(data-id=producto.id, onclick="eliminarProducto(this)", title="Eliminar")
+                          button.btn.btn-sm.btn-outline-danger(data-id=producto._id, onclick="eliminarProducto(this)", title="Eliminar")
                             i.fas.fa-trash
     script.
       async function eliminarProducto(button) {
-        if (confirm('¿Estás seguro de eliminar este producto?')) {
-          const id = button.getAttribute('data-id');
+        const id = button.getAttribute('data-id'); 
+        if (confirm(`¿Estás seguro de eliminar el producto ID: ${id}?`)) {
           try {
-            const response = await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/productos/${id}`, { method: 'DELETE' }); 
             const result = await response.json();
             if (result.success) {
               alert('Producto eliminado exitosamente');
@@ -62,7 +62,8 @@ block content
               alert(`Error: ${result.message}`);
             }
           } catch (error) {
-            alert('Error al eliminar el producto');
+            console.error('Error al eliminar producto:', error); 
+            alert('Error de conexión al eliminar el producto');
           }
         }
       }

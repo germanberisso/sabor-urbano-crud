@@ -1,8 +1,8 @@
 extends ../layout
 
 block content
-  - var page = ''
-  
+  - var page = 'productos' // Marcar en nav si quieres
+ 
   .row.mb-4
     .col-12
       h1.display-6
@@ -14,21 +14,21 @@ block content
       .card
         .card-body
           if producto
-            form#productoForm(action=`/api/productos/${producto.id}`, method="POST")
-              input(type="hidden", name="_method", value="PUT")
+            form#productoForm(data-producto-id=producto._id)
               .mb-3
                 label.form-label(for="nombre") Nombre
                 input.form-control(type="text", id="nombre", name="nombre", value=producto.nombre, required)
               .mb-3
                 label.form-label(for="precio") Precio
-                input.form-control(type="number", id="precio", name="precio", value=producto.precio, required)
-              .form-group
-                label(for="stock") Stock
-                select.form-control(name="stock")
-                  option(value="true" selected=producto && producto.stock) Disponible
-                  option(value="false" selected=producto && !producto.stock) No disponible
+                input.form-control(type="number", id="precio", name="precio", value=producto.precio, required, step="any")
+              
+              .mb-3 
+                label.form-label(for="stock") Stock
+                select.form-control(name="stock", id="stock")
+                  option(value="true", selected=producto.stock === true) Disponible
+                  option(value="false", selected=producto.stock === false) No disponible
 
-              .d-grid
+              .d-grid.mt-3 
                 button.btn.btn-warning(type="submit")
                   i.fas.fa-save.me-2
                   | Actualizar Producto
@@ -36,30 +36,56 @@ block content
             .alert.alert-danger
               i.fas.fa-exclamation-triangle.me-2
               | Producto no encontrado
-      a.btn.btn-outline-secondary.mt-3(href="/productos")
-        i.fas.fa-arrow-left.me-2
-        | Volver
-    script.
-      document.getElementById('productoForm').addEventListener('submit', async (e) => {
+          a.btn.btn-outline-secondary.mt-3(href="/productos")
+            i.fas.fa-arrow-left.me-2
+            | Volver
+            
+  // Script (sin cambios respecto a la versión anterior corregida)
+  script.
+    const form = document.getElementById('productoForm');
+    const productoId = form ? form.dataset.productoId : null; 
+
+    if (form && productoId) { 
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
-        //if (!data.unidadMedida) delete data.unidadMedida;
-        //if (!data.proveedor) delete data.proveedor;
+        
+        data.stock = data.stock === 'true'; 
+        data.precio = parseFloat(data.precio); 
+
+        if (isNaN(data.precio)) {
+          alert('El precio debe ser un número válido.');
+          return;
+        }
+
+        console.log(`Enviando PUT a /api/productos/${productoId}`, data); 
+
         try {
-          const response = await fetch(`/api/productos/${#{producto.id}}`, {
-            method: data._method || 'POST',
+          const response = await fetch(`/api/productos/${productoId}`, { 
+            method: 'PUT', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key]) => key !== '_method')))
+            body: JSON.stringify(data) 
           });
           const result = await response.json();
-          if (result.success) {
+
+          console.log(`Respuesta de PUT /api/productos/${productoId}`, result); 
+
+          if (response.ok && result.success) { 
             alert('Producto actualizado exitosamente');
             window.location.href = '/productos';
           } else {
-            alert(`Error: ${result.message}`);
+            console.error('Error del backend al actualizar:', result);
+            alert(`Error al actualizar: ${result.message || `Error ${response.status}`}`);
           }
         } catch (error) {
-          alert('Error al actualizar el producto');
+          console.error('Error en fetch PUT:', error);
+          alert('Error de conexión al actualizar el producto.');
         }
       });
+    } else {
+        console.error("Error: No se encontró el formulario o el ID del producto para el script.");
+        const submitButton = form ? form.querySelector('button[type="submit"]') : null;
+        if (submitButton) submitButton.disabled = true;
+        alert("Error crítico: No se puede actualizar el producto. Recargue la página.");
+    }
