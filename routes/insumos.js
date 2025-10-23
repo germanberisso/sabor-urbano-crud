@@ -25,6 +25,12 @@ router.get("/", insumosController.getAll);
 router.get("/bajo-stock", insumosController.getBajoStock);
 router.get("/alertas", insumosController.getAlertas);
 
+// Búsqueda de insumos por nombre (debe ir antes de /:id)
+router.get("/buscar", insumosController.buscar);
+
+// Lista de proveedores únicos (debe ir antes de /:id)
+router.get("/proveedores", insumosController.getProveedores);
+
 router.get(
   "/:id",
   ValidationMiddleware.validarParametroId,

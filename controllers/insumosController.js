@@ -45,6 +45,17 @@ class InsumosController {
         });
       }
 
+      // Validar unidad de medida si se proporciona
+      if (unidadMedida) {
+        const unidadesValidas = ['kg', 'unidades', 'litros'];
+        if (!unidadesValidas.includes(unidadMedida)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Unidad de medida inválida. Debe ser: kg, unidades o litros'
+          });
+        }
+      }
+
       const estado = determinarEstado(stockNumero, stockMinimoNumero);
       const nuevoInsumo = new Insumo({
         nombre,
@@ -85,8 +96,19 @@ class InsumosController {
 
       if (datos.nombre !== undefined) insumo.nombre = datos.nombre;
       if (datos.categoria !== undefined) insumo.categoria = datos.categoria;
-      if (datos.unidadMedida !== undefined)
+      
+      // Validar unidad de medida si se está actualizando
+      if (datos.unidadMedida !== undefined) {
+        const unidadesValidas = ['kg', 'unidades', 'litros'];
+        if (datos.unidadMedida && !unidadesValidas.includes(datos.unidadMedida)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Unidad de medida inválida. Debe ser: kg, unidades o litros'
+          });
+        }
         insumo.unidadMedida = datos.unidadMedida;
+      }
+      
       if (datos.proveedor !== undefined) insumo.proveedor = datos.proveedor;
 
       if (datos.stockMinimo !== undefined) {
@@ -208,6 +230,52 @@ class InsumosController {
       res
         .status(500)
         .json({ success: false, message: "Error al actualizar stock", error });
+    }
+  }
+
+  // Buscar insumos por nombre
+  async buscar(req, res) {
+    try {
+      const { q } = req.query;
+      if (!q || q.length < 1) {
+        return res.json([]);
+      }
+
+      const insumos = await Insumo.find({
+        nombre: { $regex: q, $options: 'i' }
+      })
+      .limit(10)
+      .select('nombre')
+      .lean();
+
+      res.json(insumos);
+    } catch (error) {
+      console.error('Error al buscar insumos:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Obtener lista de proveedores únicos
+  async getProveedores(req, res) {
+    try {
+      const { q } = req.query;
+
+      let proveedores = await Insumo.distinct('proveedor');
+
+      // Filtrar valores null o undefined
+      proveedores = proveedores.filter(p => p);
+
+      // Filtrar por query si existe
+      if (q && q.length > 0) {
+        proveedores = proveedores.filter(p =>
+          p.toLowerCase().includes(q.toLowerCase())
+        );
+      }
+
+      res.json(proveedores.slice(0, 10));
+    } catch (error) {
+      console.error('Error al buscar proveedores:', error);
+      res.status(500).json({ error: error.message });
     }
   }
 

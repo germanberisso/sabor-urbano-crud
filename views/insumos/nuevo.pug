@@ -16,7 +16,17 @@ block content
           form#insumoForm(action="/api/insumos", method="POST")
             .mb-3
               label.form-label(for="nombre") Nombre
-              input.form-control(type="text", id="nombre", name="nombre", required)
+              input.form-control#nombre(
+                type="text", 
+                name="nombre", 
+                list="insumosSuggestions",
+                autocomplete="off",
+                placeholder="Escribe para buscar insumos existentes...",
+                required
+              )
+              datalist#insumosSuggestions
+              small.form-text.text-muted Comienza a escribir para ver sugerencias
+              
             .mb-3
               label.form-label(for="categoria") Categoría
               select.form-control(id="categoria", name="categoria", required)
@@ -26,27 +36,117 @@ block content
                 option(value="limpieza") Limpieza
                 option(value="utensilios") Utensilios
                 option(value="otros") Otros
+                
             .mb-3
               label.form-label(for="stock") Stock
               input.form-control(type="number", id="stock", name="stock", required)
+              
             .mb-3
               label.form-label(for="stockMinimo") Stock Mínimo
               input.form-control(type="number", id="stockMinimo", name="stockMinimo", required)
+              
             .mb-3
               label.form-label(for="unidadMedida") Unidad de Medida
-              input.form-control(type="text", id="unidadMedida", name="unidadMedida")
+              select.form-control#unidadMedida(name="unidadMedida")
+                option(value="", disabled, selected) Seleccione una unidad
+                option(value="kg") Kilogramos (kg)
+                option(value="unidades") Unidades
+                option(value="litros") Litros (L)
+              
             .mb-3
               label.form-label(for="proveedor") Proveedor
-              input.form-control(type="text", id="proveedor", name="proveedor")
+              input.form-control#proveedor(
+                type="text", 
+                name="proveedor", 
+                list="proveedoresSuggestions",
+                autocomplete="off",
+                placeholder="Escribe para buscar proveedores..."
+              )
+              datalist#proveedoresSuggestions
+              small.form-text.text-muted Comienza a escribir para ver proveedores registrados
+              
             .d-grid
               button.btn.btn-success(type="submit")
                 i.fas.fa-save.me-2
                 | Crear Insumo
+                
       a.btn.btn-outline-secondary.mt-3(href="/insumos")
         i.fas.fa-arrow-left.me-2
         | Volver
-    script.
+        
+  script.
+    (function() {
+      const nombreInput = document.getElementById('nombre');
+      const proveedorInput = document.getElementById('proveedor');
+      const insumosList = document.getElementById('insumosSuggestions');
+      const proveedoresList = document.getElementById('proveedoresSuggestions');
       const form = document.getElementById('insumoForm');
+
+      // Función para buscar insumos
+      async function buscarInsumos(query) {
+        if (query.length < 1) {
+          insumosList.innerHTML = '';
+          return;
+        }
+        
+        try {
+          const response = await fetch(`/api/insumos/buscar?q=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          insumosList.innerHTML = '';
+          
+          data.forEach(insumo => {
+            const option = document.createElement('option');
+            option.value = insumo.nombre;
+            insumosList.appendChild(option);
+          });
+        } catch (error) {
+          console.error('Error al buscar insumos:', error);
+        }
+      }
+
+      // Función para buscar proveedores
+      async function buscarProveedores(query) {
+        if (query.length < 1) {
+          proveedoresList.innerHTML = '';
+          return;
+        }
+        
+        try {
+          const response = await fetch(`/api/insumos/proveedores?q=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          
+          proveedoresList.innerHTML = '';
+          
+          data.forEach(proveedor => {
+            const option = document.createElement('option');
+            option.value = proveedor;
+            proveedoresList.appendChild(option);
+          });
+        } catch (error) {
+          console.error('Error al buscar proveedores:', error);
+        }
+      }
+
+      // Debounce para nombre de insumo
+      let timeoutNombre;
+      nombreInput.addEventListener('input', (e) => {
+        clearTimeout(timeoutNombre);
+        timeoutNombre = setTimeout(() => {
+          buscarInsumos(e.target.value);
+        }, 300);
+      });
+
+      // Debounce para proveedor
+      let timeoutProveedor;
+      proveedorInput.addEventListener('input', (e) => {
+        clearTimeout(timeoutProveedor);
+        timeoutProveedor = setTimeout(() => {
+          buscarProveedores(e.target.value);
+        }, 300);
+      });
+
+      // Manejar submit del formulario
       if (form) {
         form.addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -82,3 +182,4 @@ block content
           }
         });
       }
+    })();
