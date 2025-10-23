@@ -50,8 +50,23 @@ block content
               select.form-control#unidadMedida(name="unidadMedida")
                 option(value="", disabled, selected) Seleccione una unidad
                 option(value="kg") Kilogramos (kg)
-                option(value="unidades") Unidades
+                option(value="g") Gramos (g)
                 option(value="litros") Litros (L)
+                option(value="ml") Mililitros (ml)
+                option(value="unidades") Unidades
+                
+            .mb-3
+              label.form-label(for="precioUnitario") Precio Unitario ($)
+              input.form-control(
+                type="number", 
+                id="precioUnitario", 
+                name="precioUnitario", 
+                min="0",
+                step="0.01",
+                placeholder="Precio por unidad",
+                value="0"
+              )
+              small.form-text.text-muted Precio de compra por unidad de medida
               
             .mb-3
               label.form-label(for="proveedor") Proveedor

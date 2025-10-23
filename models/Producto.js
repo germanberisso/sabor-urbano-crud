@@ -2,10 +2,22 @@ import mongoose from "mongoose";
 
 const productoSchema = new mongoose.Schema({
   nombre: { type: String, required: true },
-  precio: { type: Number, required: true },
+  ingredientes: [{
+    insumo: { type: mongoose.Schema.Types.ObjectId, ref: 'Insumo', required: true },
+    nombreInsumo: { type: String },
+    cantidad: { type: Number, required: true },
+    unidadMedida: { type: String },
+    precioUnitario: { type: Number, default: 0 }
+  }],
+  costoTotal: { type: Number, default: 0 }, // Calculado automáticamente
+  margenGanancia: { type: Number, default: 0 }, // Porcentaje de ganancia
+  precioSugerido: { type: Number, default: 0 }, // Calculado: costo + margen
+  precioVenta: { type: Number, required: true }, // Precio final (editable)
+  precio: { type: Number }, // Mantener compatibilidad con código anterior
   stock: { type: Boolean, default: true },
-  categoria: { type: String }, // opcional, agregar si lo necesitas
-  unidadMedida: { type: String }, // opcional
+  stockDisponible: { type: Number, default: 0 }, // Calculado según insumos
+  categoria: { type: String },
+  unidadMedida: { type: String },
   ultimaActualizacion: { type: Date, default: Date.now }
 });
 

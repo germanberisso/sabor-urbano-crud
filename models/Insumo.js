@@ -7,6 +7,7 @@ const insumoSchema = new mongoose.Schema({
   stockMinimo: { type: Number, default: 5 },
   unidadMedida: { type: String },
   proveedor: { type: String },
+  precioUnitario: { type: Number, default: 0 }, // Precio por unidad del insumo
   estado: {
     type: String,
     enum: ["disponible", "bajo_stock", "sin_stock"],

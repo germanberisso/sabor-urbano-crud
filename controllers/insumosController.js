@@ -32,11 +32,12 @@ class InsumosController {
   // Crear nuevo insumo
   async create(req, res) {
     try {
-      const { nombre, categoria, stock, stockMinimo, unidadMedida, proveedor } =
+      const { nombre, categoria, stock, stockMinimo, unidadMedida, proveedor, precioUnitario } =
         req.body;
 
       const stockNumero = Number(stock);
       const stockMinimoNumero = Number(stockMinimo);
+      const precioNumero = Number(precioUnitario) || 0;
 
       if (Number.isNaN(stockNumero) || Number.isNaN(stockMinimoNumero)) {
         return res.status(400).json({
@@ -64,6 +65,7 @@ class InsumosController {
         stockMinimo: stockMinimoNumero,
         unidadMedida,
         proveedor,
+        precioUnitario: precioNumero,
         estado,
         ultimaActualizacion: new Date(),
       });
@@ -110,6 +112,17 @@ class InsumosController {
       }
       
       if (datos.proveedor !== undefined) insumo.proveedor = datos.proveedor;
+
+      if (datos.precioUnitario !== undefined) {
+        const precioNumero = Number(datos.precioUnitario);
+        if (Number.isNaN(precioNumero) || precioNumero < 0) {
+          return res.status(400).json({
+            success: false,
+            message: "El precio unitario debe ser un número positivo",
+          });
+        }
+        insumo.precioUnitario = precioNumero;
+      }
 
       if (datos.stockMinimo !== undefined) {
         const stockMinimoNumero = Number(datos.stockMinimo);

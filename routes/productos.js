@@ -8,16 +8,35 @@ const productosController = new ProductosController();
 // Middleware global para logs de todas las requests
 router.use(ValidationMiddleware.logRequest);
 
+// Middleware específico para validar body en POST de productos
+const validarProductoPOST = (req, res, next) => {
+    const { nombre, ingredientes, precioVenta } = req.body;
+
+    if (!nombre) {
+        return res.status(400).json({ success: false, message: 'El nombre es obligatorio' });
+    }
+
+    if (!ingredientes || !Array.isArray(ingredientes) || ingredientes.length === 0) {
+        return res.status(400).json({ success: false, message: 'Debe agregar al menos un ingrediente' });
+    }
+
+    if (precioVenta === undefined || precioVenta === null) {
+        return res.status(400).json({ success: false, message: 'El precio de venta es obligatorio' });
+    }
+
+    next();
+};
+
 // Middleware específico para validar body en PUT
 const validarProductoPUT = (req, res, next) => {
-    const { nombre, precio, stock } = req.body;
+    const { nombre, ingredientes, margenGanancia, precioVenta } = req.body;
 
     if (req.method === 'PUT' && Object.keys(req.body).length === 0) {
         return res.status(400).json({ success: false, message: 'Body vacío: envíe al menos un campo.' });
     }
 
     if (req.method === 'PUT') {
-        const alguno = [nombre, precio, stock].some(f => f !== undefined);
+        const alguno = [nombre, ingredientes, margenGanancia, precioVenta].some(f => f !== undefined);
         if (!alguno) {
             return res.status(400).json({ success: false, message: 'Incluya algún campo para actualizar.' });
         }
@@ -26,19 +45,15 @@ const validarProductoPUT = (req, res, next) => {
     next();
 };
 
-// Validaciones comunes
-const validarCamposPOST = ValidationMiddleware.validarCamposRequeridos(['nombre', 'precio', 'stock']);
-const validarNumericos = [ValidationMiddleware.validarNumerico('precio')];
-
 // Rutas
 router.get('/', productosController.getAll);
+router.get('/insumos-disponibles', productosController.getInsumosDisponibles); // Debe ir antes de /:id
 router.get('/:id', ValidationMiddleware.validarParametroId, productosController.getById);
 
 router.post(
     '/',
     ValidationMiddleware.sanitizarDatos,
-    validarCamposPOST,
-    validarNumericos,
+    validarProductoPOST,
     productosController.create
 );
 
@@ -47,7 +62,6 @@ router.put(
     ValidationMiddleware.validarParametroId,
     ValidationMiddleware.sanitizarDatos,
     validarProductoPUT,
-    validarNumericos,
     productosController.update
 );
 
