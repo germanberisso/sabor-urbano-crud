@@ -272,7 +272,7 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("🔥🔥🔥 Error capturado:", err.stack);
+  console.error("Error capturado:", err.stack);
   res.status(err.status || 500).render('error', {
     error: err.message || 'Error interno del servidor',
     code: err.status || 500
@@ -281,5 +281,5 @@ app.use((err, req, res, next) => {
 
 // SERVIDOR
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
