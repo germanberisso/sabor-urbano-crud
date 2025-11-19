@@ -177,7 +177,7 @@ Se ha expandido la estructura de carpetas para incluir nuevos módulos de autent
    ```
 
 6. **Verificar:**
-   - La consola debería mostrar "🚀 Servidor corriendo en http://localhost:3000" y "✅ Conexión exitosa a MongoDB Atlas".
+   - La consola debería mostrar "Servidor corriendo en http://localhost:3000" y "Conexión exitosa a MongoDB Atlas".
    - Abre en tu navegador: `http://localhost:3000` (debería redirigir a `/login`).
 
 ## Uso
@@ -309,22 +309,91 @@ Se recomienda usar un cliente API como Thunder Client o Postman, y el navegador 
 
 ## Ejemplos
 
-_(Sección disponible para agregar ejemplos adicionales de uso)_
+### Crear un Empleado (API con Sesión)
+
+```bash
+curl -X POST http://localhost:3000/api/empleados \
+  -H "Content-Type: application/json" \
+  -H "Cookie: connect.sid=[TU_COOKIE_SESION]" \
+  -d '{
+    "nombre": "Carlos",
+    "apellido": "Martínez",
+    "email": "carlos@saborurbano.com",
+    "telefono": "11-5678-1234",
+    "rol": "cocinero",
+    "area": "cocina"
+  }'
+```
+
+### Crear una Tarea (API con JWT)
+
+```bash
+curl -X POST http://localhost:3000/api/tareas \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer [TU_TOKEN_JWT]" \
+  -d '{
+    "titulo": "Preparar ingredientes para el servicio nocturno",
+    "descripcion": "Cortar verduras y preparar salsas",
+    "area": "cocina",
+    "estado": "pendiente",
+    "prioridad": "alta",
+    "empleadoAsignado": "507f1f77bcf86cd799439011"
+  }'
+```
+
+### Obtener Tareas con Filtros (API)
+
+```bash
+curl -X GET "http://localhost:3000/api/tareas?estado=pendiente&prioridad=alta&area=cocina" \
+  -H "Cookie: connect.sid=[TU_COOKIE_SESION]"
+```
+
+### Actualizar Estado de una Tarea
+
+```bash
+curl -X PATCH http://localhost:3000/api/tareas/507f1f77bcf86cd799439011/iniciar \
+  -H "Content-Type: application/json" \
+  -H "Cookie: connect.sid=[TU_COOKIE_SESION]"
+```
+
+### Crear un Pedido
+
+```bash
+curl -X POST http://localhost:3000/api/pedidos \
+  -H "Content-Type: application/json" \
+  -H "Cookie: connect.sid=[TU_COOKIE_SESION]" \
+  -d '{
+    "tipo": "delivery",
+    "plataforma": "Rappi",
+    "items": [
+      {
+        "producto": "507f1f77bcf86cd799439012",
+        "cantidad": 2,
+        "precioUnitario": 1500
+      }
+    ],
+    "cliente": {
+      "nombre": "María",
+      "apellido": "González",
+      "telefono": "11-9876-5432",
+      "direccion": "Av. Corrientes 1234"
+    }
+  }'
+```
 
 ## Contribución
 
 1. Haz un Fork del repositorio.
-2. Crea una nueva rama para tu feature.
-3. Realiza tus cambios y haz commit.
-4. Empuja tu rama y abre un Pull Request.
+2. Crea una nueva rama para tu feature (`git checkout -b feature/nueva-funcionalidad`).
+3. Realiza tus cambios y haz commit (`git commit -m 'Agregar nueva funcionalidad'`).
+4. Empuja tu rama (`git push origin feature/nueva-funcionalidad`).
+5. Abre un Pull Request.
 
 ## Licencia
 
 MIT
 
 ## Responsabilidades del Equipo
-
-_(Ajustar según corresponda)_
 
 - **Juan Dualibe** (Project Manager / Infraestructura): Coordinación, actualización de `app.js` (sesiones, passport, rutas de auth), gestión de dependencias.
 - **Nicolás Weibel** (Backend Lead / Arquitecto): Diseño de arquitectura, configuración de `config/passport.js`, creación de middlewares de protección (`auth.js`, `authVistas.js`).
