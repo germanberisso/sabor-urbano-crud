@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import passport from 'passport'; 
 import session from 'express-session'; 
 import { isLoggedIn, isLoggedOut } from './middleware/authVistas.js'; 
+import { requireJWT } from './middleware/jwtMiddleware.js';
 
 import conectarDB from './db.js';
 
@@ -30,6 +31,8 @@ import authRouter from './routes/auth.js';
 
 // Controladores
 import PedidosController from './controllers/pedidosController.js';
+
+
 
 dotenv.config();
 conectarDB();
@@ -138,12 +141,12 @@ app.get('/logout', isLoggedIn, (req, res, next) => {
 });
 
 
-// RUTAS API (Protegidas por Sesión)
-app.use('/api/empleados', empleadosRouter);
-app.use('/api/tareas', tareasRouter);
-app.use('/api/pedidos', pedidosRouter); 
-app.use('/api/insumos', insumosRouter);
-app.use('/api/productos', productosRouter);
+// RUTAS API (Protegidas por Token)
+app.use('/api/empleados', requireJWT, empleadosRouter);
+app.use('/api/tareas', requireJWT, empleadosRouter);
+app.use('/api/pedidos', requireJWT, empleadosRouter);
+app.use('/api/insumos', requireJWT, empleadosRouter);
+app.use('/api/products', requireJWT, empleadosRouter);
 
 
 // --- RUTAS DE VISTAS (Protegidas) ---
